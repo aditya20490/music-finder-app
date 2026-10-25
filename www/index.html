@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Music Finder</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: #000; color: #fff; font-family: system-ui, sans-serif; padding-bottom: 80px; }
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+  h2 { margin: 8px 0 14px; }
+  h3 { margin: 18px 0 10px; color: #fa2d48; }
+  .bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .bar input { flex: 1; padding: 14px; border-radius: 12px; border: 1px solid #333; background: #111; color: #fff; font-size: 16px; }
+  .bar button { padding: 0 18px; border: 0; border-radius: 12px; background: #fa2d48; color: #fff; font-size: 16px; font-weight: 600; }
+  .item { display: flex; gap: 12px; background: #111; border-radius: 14px; padding: 10px; margin-bottom: 10px; align-items: center; }
+  .item img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; background: #222; flex-shrink: 0; }
+  .item .info { min-width: 0; }
+  .item .t { font-weight: 600; }
+  .item .s { color: #999; font-size: 14px; margin-top: 2px; }
+  .item button { margin-top: 6px; padding: 6px 12px; border: 0; border-radius: 8px; background: #222; color: #fff; }
+  .big { background: #111; border-radius: 14px; padding: 12px; margin-bottom: 14px; }
+  .big img { width: 100%; border-radius: 10px; }
+  .big a { display: block; text-align: center; margin-top: 10px; padding: 12px; border-radius: 10px; background: #fa2d48; color: #fff; text-decoration: none; font-weight: 600; }
+  .lyrics { white-space: pre-wrap; line-height: 1.7; background: #111; border-radius: 14px; padding: 14px; margin-bottom: 14px; font-size: 17px; }
+  .more { display: block; width: 100%; padding: 12px; border: 0; border-radius: 12px; background: #1a1a1a; color: #fa2d48; font-weight: 600; margin-bottom: 8px; }
+  .back { margin-bottom: 12px; padding: 8px 14px; border: 0; border-radius: 8px; background: #222; color: #fff; }
+  .msg { color: #999; text-align: center; padding: 20px; }
+  nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #0a0a0a; border-top: 1px solid #222; }
+  nav button { flex: 1; padding: 16px 0; background: none; border: 0; color: #777; font-size: 15px; font-weight: 600; }
+  nav button.active { color: #fa2d48; }
+</style>
+</head>
+<body>
+
+<div id="songs" class="page active">
+  <h2>Search Song</h2>
+  <div class="bar"><input id="songQ" placeholder="Song or artist"><button onclick="searchSongs()">Search</button></div>
+  <div id="songOut"></div>
+</div>
+
+<div id="covers" class="page">
+  <h2>Album Cover</h2>
+  <div class="bar"><input id="coverQ" placeholder="Album or song name"><button onclick="searchCovers()">Search</button></div>
+  <div id="coverOut"></div>
+</div>
+
+<div id="lyrics" class="page">
+  <h2>Search Lyrics</h2>
+  <div class="bar"><input id="lyricQ" placeholder="Song or artist"><button onclick="searchLyrics()">Search</button></div>
+  <div id="lyricOut"></div>
+</div>
+
+<nav>
+  <button class="active" onclick="show('songs', this)">Songs</button>
+  <button onclick="show('covers', this)">Covers</button>
+  <button onclick="show('lyrics', this)">Lyrics</button>
+</nav>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function msg(box, text) {
+  box.innerHTML = '';
+  const d = document.createElement('div');
+  d.className = 'msg';
+  d.textContent = text;
+  box.appendChild(d);
+}
+
+async function getJson(url) {
+  const r = await fetch(url);
+  return await r.json();
+}
+
+function bigArt(url) {
+  return url.replace(/\/\d+x\d+bb\./, '/3000x3000bb.');
+}
+
+/* ---------- SONGS TAB ---------- */
+async function searchSongs() {
+  const q = document.getElementById('songQ').value.trim();
+  const box = document.getElementById('songOut');
+  if (!q) return;
+  msg(box, 'Searching...');
+  try {
+    const data = await getJson('https://itunes.apple.com/search?media=music&entity=song&limit=25&term=' + encodeURIComponent(q));
+    if (!data.results.length) return msg(box, 'Nothing found');
+    box.innerHTML = '';
+    data.results.forEach(s => {
+      const el = document.createElement('div');
+      el.className = 'item';
+      const img = document.createElement('img');
+      img.src = s.artworkUrl100;
+      const info = document.createElement('div');
+      info.className = 'info';
+      const t = document.createElement('div');
+      t.className = 't';
+      t.textContent = s.trackName;
+      const sub = document.createElement('div');
+      sub.className = 's';
+      sub.textContent = s.artistName + ' • ' + s.collectionName;
+      info.appendChild(t);
+      info.appendChild(sub);
+      if (s.previewUrl) {
+        const b = document.createElement('button');
+        b.textContent = 'Play preview';
+        b.onclick = () => {
+          if (window._a) window._a.pause();
+          window._a = new Audio(s.previewUrl);
+          window._a.play();
+        };
+        info.appendChild(b);
+      }
+      el.appendChild(img);
+      el.appendChild(info);
+      box.appendChild(el);
+    });
+  } catch (e) {
+    msg(box, 'Something went wrong, try again');
+  }
+}
+
+/* ---------- COVERS TAB ---------- */
+async function searchCovers() {
+  const q = document.getElementById('coverQ').value.trim();
+  const box = document.getElementById('coverOut');
+  if (!q) return;
+  msg(box, 'Searching...');
+  try {
+    const data = await getJson('https://itunes.apple.com/search?media=music&entity=album&limit=25&term=' + encodeURIComponent(q));
+    if (!data.results.length) return msg(box, 'Nothing found');
+    box.innerHTML = '';
+    data.results.forEach(a => {
+      const full = bigArt(a.artworkUrl100);
+      const wrap = document.createElement('div');
+      wrap.className = 'big';
+      const img = document.createElement('img');
+      img.src = full.replace('3000x3000', '600x600');
+      const t = document.createElement('div');
+      t.className = 't';
+      t.style.marginTop = '8px';
+      t.textContent = a.collectionName;
+      const s = document.createElement('div');
+      s.className = 's';
+      s.style.color = '#999';
+      s.textContent = a.artistName;
+      const link = document.createElement('a');
+      link.href = full;
+      link.target = '_blank';
+      link.textContent = 'Open full size cover';
+      wrap.appendChild(img);
+      wrap.appendChild(t);
+      wrap.appendChild(s);
+      wrap.appendChild(link);
+      box.appendChild(wrap);
+    });
+  } catch (e) {
+    msg(box, 'Something went wrong, try again');
+  }
+}
+
+/* ---------- LYRICS TAB (reads Lyricsify pages) ---------- */
+const LY = 'https://www.lyricsify.com';
+let lastSearchUrl = '';
+
+async function getPage(url) {
+  const r = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36',
+      'Accept': 'text/html'
+    }
+  });
+  const html = await r.text();
+  return new DOMParser().parseFromString(html, 'text/html');
+}
+
+function fixImg(src) {
+  if (!src) return '';
+  if (src.startsWith('http')) return src;
+  return LY + src;
+}
+
+function makeItem(li) {
+  const a = li.querySelector('a[href]');
+  if (!a) return null;
+  const href = a.getAttribute('href');
+  const titleEl = a.querySelector('.text-primary');
+  const title = (titleEl ? titleEl.textContent : a.textContent).trim();
+  const subEl = li.querySelector('.text-secondary, .text-sm');
+  const sub = subEl ? subEl.textContent.trim() : '';
+  const imgEl = li.querySelector('img');
+
+  const el = document.createElement('div');
+  el.className = 'item';
+  if (imgEl) {
+    const img = document.createElement('img');
+    img.src = fixImg(imgEl.getAttribute('src'));
+    el.appendChild(img);
+  }
+  const info = document.createElement('div');
+  info.className = 'info';
+  const t = document.createElement('div');
+  t.className = 't';
+  t.textContent = title;
+  info.appendChild(t);
+  if (sub) {
+    const s = document.createElement('div');
+    s.className = 's';
+    s.textContent = sub;
+    info.appendChild(s);
+  }
+  el.appendChild(info);
+  el.onclick = () => openLyricsPage(href, title);
+  return el;
+}
+
+function typeFor(title) {
+  const x = title.toLowerCase();
+  if (x.indexOf('song') > -1) return 'song';
+  if (x.indexOf('artist') > -1) return 'artist';
+  if (x.indexOf('album') > -1) return 'album';
+  return '';
+}
+
+function renderResults(box, doc, searchUrl) {
+  box.innerHTML = '';
+  let count = 0;
+  const rows = doc.querySelectorAll('.row');
+  rows.forEach(row => {
+    const h = row.querySelector('h3');
+    const lis = row.querySelectorAll('.li');
+    if (!h || !lis.length) return;
+    const head = document.createElement('h3');
+    head.textContent = h.textContent.trim();
+    box.appendChild(head);
+    lis.forEach(li => {
+      const el = makeItem(li);
+      if (el) { box.appendChild(el); count++; }
+    });
+    const type = typeFor(h.textContent);
+    if (type && searchUrl.indexOf('type=') === -1) {
+      const more = document.createElement('button');
+      more.className = 'more';
+      more.textContent = 'See more ' + h.textContent.trim().toLowerCase();
+      more.onclick = async () => {
+        msg(box, 'Loading...');
+        try {
+          const d = await getPage(searchUrl + '&type=' + type);
+          renderFlat(box, d);
+        } catch (e) {
+          msg(box, 'Something went wrong, try again');
+        }
+      };
+      box.appendChild(more);
+    }
+  });
+  if (!count) renderFlat(box, doc);
+}
+
+function renderFlat(box, doc) {
+  box.innerHTML = '';
+  let count = 0;
+  doc.querySelectorAll('.li').forEach(li => {
+    const el = makeItem(li);
+    if (el) { box.appendChild(el); count++; }
+  });
+  if (!count) msg(box, 'Nothing found');
+}
+
+async function searchLyrics() {
+  const q = document.getElementById('lyricQ').value.trim();
+  const box = document.getElementById('lyricOut');
+  if (!q) return;
+  msg(box, 'Searching...');
+  try {
+    lastSearchUrl = LY + '/search?q=' + encodeURIComponent(q).replace(/%20/g, '+');
+    const doc = await getPage(lastSearchUrl);
+    renderResults(box, doc, lastSearchUrl);
+  } catch (e) {
+    msg(box, 'Could not reach the lyrics site, try again');
+  }
+}
+
+function extractLyrics(doc) {
+  doc.querySelectorAll('script,style,nav,header,footer,form,.header,.footer,.search-collapse,.navbar-collapse').forEach(n => n.remove());
+  let best = null;
+  let bestLen = 0;
+  doc.querySelectorAll('[id*="lyric" i],[class*="lyric" i],[id*="lrc" i],[class*="lrc" i]').forEach(n => {
+    const l = (n.textContent || '').trim().length;
+    if (l > bestLen) { best = n; bestLen = l; }
+  });
+  if (!best) best = doc.querySelector('.main-container') || doc.body;
+  const c = best.cloneNode(true);
+  c.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
+  c.querySelectorAll('p,div,li').forEach(e => e.append('\n'));
+  let text = c.textContent || '';
+  text = text.replace(/\[\d+:\d+(\.\d+)?\]/g, '');
+  text = text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  return text;
+}
+
+async function openLyricsPage(href, title) {
+  const box = document.getElementById('lyricOut');
+  msg(box, 'Loading...');
+  try {
+    const doc = await getPage(LY + href);
+    const back = document.createElement('button');
+    back.className = 'back';
+    back.textContent = '← Back';
+    back.onclick = async () => {
+      if (!lastSearchUrl) return;
+      msg(box, 'Loading...');
+      const d = await getPage(lastSearchUrl);
+      renderResults(box, d, lastSearchUrl);
+    };
+
+    if (href.indexOf('/lrc/') === 0) {
+      const h1 = doc.querySelector('h1');
+      const head = document.createElement('h3');
+      head.textContent = h1 ? h1.textContent.trim() : title;
+      const ly = document.createElement('div');
+      ly.className = 'lyrics';
+      ly.textContent = extractLyrics(doc) || 'No lyrics found on this page';
+      box.innerHTML = '';
+      box.appendChild(back);
+      box.appendChild(head);
+      box.appendChild(ly);
+    } else {
+      box.innerHTML = '';
+      box.appendChild(back);
+      const head = document.createElement('h3');
+      head.textContent = title;
+      box.appendChild(head);
+      let count = 0;
+      const seen = {};
+      doc.querySelectorAll('a[href^="/lrc/"]').forEach(a => {
+        const h = a.getAttribute('href');
+        if (seen[h]) return;
+        seen[h] = true;
+        const el = document.createElement('div');
+        el.className = 'item';
+        const info = document.createElement('div');
+        info.className = 'info';
+        const t = document.createElement('div');
+        t.className = 't';
+        t.textContent = a.textContent.trim();
+        info.appendChild(t);
+        el.appendChild(info);
+        el.onclick = () => openLyricsPage(h, t.textContent);
+        box.appendChild(el);
+        count++;
+      });
+      if (!count) msg(box, 'No songs found here');
+    }
+  } catch (e) {
+    msg(box, 'Something went wrong, try again');
+  }
+}
+</script>
+</body>
+</html>
