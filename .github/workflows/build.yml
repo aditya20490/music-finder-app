@@ -27,6 +27,13 @@ jobs:
       - name: Create Android app
         run: npx cap add android
 
+      - name: Add private link feature
+        run: |
+          DIR=android/app/src/main/java/com/musicfinder/app
+          mkdir -p $DIR
+          cp native/IncognitoPlugin.java $DIR/IncognitoPlugin.java
+          cp native/MainActivity.java $DIR/MainActivity.java
+
       - name: Sync
         run: npx cap sync android
 
