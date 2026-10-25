@@ -48,13 +48,13 @@
 
   /* cover cards */
   .cover { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px; margin-bottom: 16px; }
-  .cover img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 12px; background: var(--card2); display: block; }
-  .cover .name { font-size: 19px; font-weight: 700; margin: 12px 4px 2px; }
-  .cover .by { color: var(--sub); font-size: 15px; margin: 0 4px 12px; }
+  .cover img { width: 100%; height: auto; border-radius: 12px; background: var(--card2); display: block; }
+  .cover .name { font-size: 18px; font-weight: 700; margin: 12px 4px 10px; line-height: 1.3; }
   .dl { display: block; width: 100%; text-align: left; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card2); color: var(--text); font-size: 16px; font-weight: 600; margin-top: 8px; }
   .dl small { display: block; color: var(--sub); font-weight: 400; font-size: 13px; margin-top: 2px; }
   .dl.hi { background: var(--accent); border-color: var(--accent); color: #fff; }
   .dl.hi small { color: rgba(255,255,255,.85); }
+  .cp { display: block; width: 100%; padding: 10px; border: 0; background: none; color: var(--sub); font-size: 14px; margin-top: 4px; }
   .tip { color: var(--sub); font-size: 13px; line-height: 1.5; margin: 4px 2px 18px; }
 
   /* song rows */
@@ -87,40 +87,31 @@
 
 <!-- COVERS -->
 <div id="covers" class="page">
-  <div class="eyebrow">Artwork Finder</div>
+  <div class="eyebrow">iTunes Artwork Finder</div>
   <h1>Album Cover</h1>
-  <p class="lead">Search the store for high-resolution album artwork.</p>
+  <p class="lead">Same method as the real artwork finder: standard and uncompressed covers.</p>
   <div class="panel">
-    <label for="region">Region</label>
-    <select id="region">
-      <option value="us">United States of America</option>
-      <option value="gb">United Kingdom</option>
-      <option value="in">India</option>
-      <option value="au">Australia</option>
-      <option value="ca">Canada</option>
-      <option value="de">Germany</option>
-      <option value="fr">France</option>
-      <option value="es">Spain</option>
-      <option value="it">Italy</option>
-      <option value="nl">Netherlands</option>
-      <option value="se">Sweden</option>
-      <option value="jp">Japan</option>
-      <option value="kr">Korea, Republic Of</option>
-      <option value="br">Brazil</option>
-      <option value="mx">Mexico</option>
-      <option value="ae">United Arab Emirates</option>
-      <option value="sa">Saudi Arabia</option>
-      <option value="sg">Singapore</option>
-      <option value="za">South Africa</option>
-      <option value="ng">Nigeria</option>
-      <option value="ph">Philippines</option>
-      <option value="id">Indonesia</option>
-      <option value="pk">Pakistan</option>
-      <option value="tr">Turkey</option>
+    <label for="entity">Media</label>
+    <select id="entity">
+      <option value="album" selected>Album</option>
+      <option value="idAlbum">Apple ID (Album)</option>
+      <option value="tvSeason">TV Show</option>
+      <option value="movie">Movie</option>
+      <option value="ebook">iBook</option>
+      <option value="software">App (iPhone or Universal)</option>
+      <option value="iPadSoftware">App (iPad)</option>
+      <option value="macSoftware">App (macOS)</option>
+      <option value="audiobook">Audiobook</option>
+      <option value="podcast">Podcast</option>
+      <option value="musicVideo">Music Video (may not work)</option>
+      <option value="id">Apple ID (Movie)</option>
+      <option value="shortFilm">Short Film</option>
     </select>
-    <label for="coverQ">Album or artist name</label>
+    <label for="region">Region</label>
+    <select id="region"></select>
+    <label for="coverQ">Search</label>
     <input id="coverQ" type="text" placeholder="e.g. Montero">
-    <button class="go" onclick="searchCovers()">Search</button>
+    <button class="go" onclick="searchCovers()">Get the artwork</button>
   </div>
   <div id="coverOut"></div>
 </div>
@@ -145,6 +136,25 @@
 </nav>
 
 <script>
+const COUNTRY_LIST = "ae:United Arab Emirates|ag:Antigua and Barbuda|ai:Anguilla|al:Albania|am:Armenia|ao:Angola|ar:Argentina|at:Austria|au:Australia|az:Azerbaijan|bb:Barbados|be:Belgium|bf:Burkina-Faso|bg:Bulgaria|bh:Bahrain|bj:Benin|bm:Bermuda|bn:Brunei Darussalam|bo:Bolivia|br:Brazil|bs:Bahamas|bt:Bhutan|bw:Botswana|by:Belarus|bz:Belize|ca:Canada|cg:Democratic Republic of the Congo|ch:Switzerland|cl:Chile|cn:China|co:Colombia|cr:Costa Rica|cv:Cape Verde|cy:Cyprus|cz:Czech Republic|de:Germany|dk:Denmark|dm:Dominica|do:Dominican Republic|dz:Algeria|ec:Ecuador|ee:Estonia|eg:Egypt|es:Spain|fi:Finland|fj:Fiji|fm:Federated States of Micronesia|fr:France|gb:United Kingdom|gd:Grenada|gh:Ghana|gm:Gambia|gr:Greece|gt:Guatemala|gw:Guinea Bissau|gy:Guyana|hk:Hong Kong|hn:Honduras|hr:Croatia|hu:Hungary|id:Indonesia|ie:Ireland|il:Israel|in:India|is:Iceland|it:Italy|jm:Jamaica|jo:Jordan|jp:Japan|ke:Kenya|kg:Krygyzstan|kh:Cambodia|kn:Saint Kitts and Nevis|kr:South Korea|kw:Kuwait|ky:Cayman Islands|kz:Kazakhstan|la:Laos|lb:Lebanon|lc:Saint Lucia|lk:Sri Lanka|lr:Liberia|lt:Lithuania|lu:Luxembourg|lv:Latvia|md:Moldova|mg:Madagascar|mk:Macedonia|ml:Mali|mn:Mongolia|mo:Macau|mr:Mauritania|ms:Montserrat|mt:Malta|mu:Mauritius|mw:Malawi|mx:Mexico|my:Malaysia|mz:Mozambique|na:Namibia|ne:Niger|ng:Nigeria|ni:Nicaragua|nl:Netherlands|np:Nepal|no:Norway|nz:New Zealand|om:Oman|pa:Panama|pe:Peru|pg:Papua New Guinea|ph:Philippines|pk:Pakistan|pl:Poland|pt:Portugal|pw:Palau|py:Paraguay|qa:Qatar|ro:Romania|ru:Russia|sa:Saudi Arabia|sb:Soloman Islands|sc:Seychelles|se:Sweden|sg:Singapore|si:Slovenia|sk:Slovakia|sl:Sierra Leone|sn:Senegal|sr:Suriname|st:Sao Tome e Principe|sv:El Salvador|sz:Swaziland|tc:Turks and Caicos Islands|td:Chad|th:Thailand|tj:Tajikistan|tm:Turkmenistan|tn:Tunisia|tr:Turkey|tt:Republic of Trinidad and Tobago|tw:Taiwan|tz:Tanzania|ua:Ukraine|ug:Uganda|us:United States of America|uy:Uruguay|uz:Uzbekistan|vc:Saint Vincent and the Grenadines|ve:Venezuela|vg:British Virgin Islands|vn:Vietnam|ye:Yemen|za:South Africa|zw:Zimbabwe";
+
+function fillRegions() {
+  const sel = document.getElementById('region');
+  const all = COUNTRY_LIST.split('|').map(x => {
+    const i = x.indexOf(':');
+    return [x.slice(0, i), x.slice(i + 1)];
+  });
+  const first = [['us', 'United States of America'], ['gb', 'United Kingdom']];
+  const rest = all.filter(c => c[0] !== 'us' && c[0] !== 'gb').sort((a, b) => a[1].localeCompare(b[1]));
+  first.concat(rest).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c[0];
+    o.textContent = c[1];
+    sel.appendChild(o);
+  });
+}
+fillRegions();
+
 function show(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -185,14 +195,6 @@ function appleUrl(u) {
   } catch (e) {
     return u;
   }
-}
-
-function stdArt(u) {
-  return u.replace(/\/\d+x\d+bb\.\w+$/, '/3000x3000bb.jpg');
-}
-
-function rawArt(u) {
-  return u.replace(/\/\d+x\d+bb\.\w+$/, '/100000x100000-999.jpg');
 }
 
 /* ---------- SONGS ---------- */
@@ -247,55 +249,157 @@ async function searchSongs() {
   }
 }
 
-/* ---------- COVERS ---------- */
+/* ---------- COVERS (same method as the real iTunes Artwork Finder) ---------- */
+function buildSearchUrl(query, entity, country) {
+  let ent = entity;
+  let shortFilm = false;
+  if (ent === 'shortFilm') {
+    shortFilm = true;
+    ent = 'movie';
+  }
+  let url = 'https://itunes.apple.com/search?term=' + encodeURIComponent(query) + '&country=' + country + '&entity=' + ent;
+  if (shortFilm) url += '&attribute=shortFilmTerm';
+  if (entity === 'id' || entity === 'idAlbum') {
+    url = 'https://itunes.apple.com/lookup?id=' + encodeURIComponent(query) + '&country=' + country;
+  }
+  return url + '&limit=25';
+}
+
+function processResults(json, entity) {
+  const out = [];
+  (json.results || []).forEach(r => {
+    if (entity === 'id' && r.kind !== 'feature-movie' && r.wrapperType !== 'collection') return;
+    if (entity === 'idAlbum' && r.collectionType !== 'Album') return;
+    if (!r.artworkUrl100 && !r.artworkUrl512) return;
+
+    const art = r.artworkUrl100 || r.artworkUrl512;
+    const d = {};
+    d.url = art.replace('100x100', '600x600');
+
+    // High resolution link (original site: is5-ssl.mzstatic.com + path)
+    let hires = art.replace('100x100bb', '100000x100000-999');
+    try {
+      hires = 'https://is5-ssl.mzstatic.com' + new URL(hires).pathname;
+    } catch (e) {}
+    d.hires = hires;
+
+    // Uncompressed original (albums only) - the big file
+    if (entity === 'album' || entity === 'idAlbum') {
+      const parts = hires.split('/image/thumb/');
+      if (parts.length === 2) {
+        const segs = parts[1].split('/');
+        segs.pop();
+        d.uncompressed = 'https://a5.mzstatic.com/us/r1000/0/' + segs.join('/');
+      }
+    }
+
+    d.title = entity === 'movie' ? r.trackName : r.collectionName;
+    switch (entity) {
+      case 'musicVideo':
+        d.title = r.trackName + ' (by ' + r.artistName + ')';
+        d.url = hires;
+        break;
+      case 'tvSeason':
+        d.title = r.collectionName;
+        break;
+      case 'movie':
+      case 'id':
+      case 'shortFilm':
+        d.title = r.trackName || r.collectionName;
+        break;
+      case 'ebook':
+        d.title = r.trackName + ' (by ' + r.artistName + ')';
+        break;
+      case 'album':
+      case 'idAlbum':
+      case 'audiobook':
+      case 'podcast':
+        d.title = r.collectionName + ' (by ' + r.artistName + ')';
+        break;
+      case 'software':
+      case 'iPadSoftware':
+      case 'macSoftware':
+        d.url = (r.artworkUrl512 || art).replace('512x512bb', '1024x1024bb');
+        d.appstore = r.trackViewUrl;
+        d.title = r.trackName;
+        break;
+    }
+    if (d.title) out.push(d);
+  });
+  return out;
+}
+
+function makeLinkButton(box, label, sub, url, hi) {
+  const b = document.createElement('button');
+  b.className = 'dl' + (hi ? ' hi' : '');
+  b.innerHTML = label + '<small>' + sub + '</small>';
+  b.onclick = () => openInApp(url);
+  box.appendChild(b);
+}
+
+function makeCopyButton(box, url) {
+  const c = document.createElement('button');
+  c.className = 'cp';
+  c.textContent = 'Copy uncompressed link';
+  c.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      c.textContent = 'Copied';
+    } catch (e) {
+      c.textContent = 'Could not copy';
+    }
+    setTimeout(() => { c.textContent = 'Copy uncompressed link'; }, 1800);
+  };
+  box.appendChild(c);
+}
+
 async function searchCovers() {
   const q = document.getElementById('coverQ').value.trim();
   const country = document.getElementById('region').value;
+  const entity = document.getElementById('entity').value;
   const box = document.getElementById('coverOut');
   if (!q) return;
   msg(box, 'Searching...');
   try {
-    const data = await getJson('https://itunes.apple.com/search?media=music&entity=album&limit=25&country=' + country + '&term=' + encodeURIComponent(q));
-    if (!data.results.length) return msg(box, 'Nothing found');
+    const json = await getJson(buildSearchUrl(q, entity, country));
+    const list = processResults(json, entity);
+    if (!list.length) return msg(box, 'No results found.');
     box.innerHTML = '';
 
     const tip = document.createElement('div');
     tip.className = 'tip';
-    tip.textContent = 'Tap a button to open the image. Then press and hold the image and choose Download image.';
+    tip.textContent = 'Tap a button to open the image, then press and hold it to download. If the item is not on iTunes, this tool will not find it.';
     box.appendChild(tip);
 
-    data.results.forEach(a => {
+    const isApp = entity === 'software' || entity === 'iPadSoftware' || entity === 'macSoftware';
+
+    list.forEach(d => {
       const card = document.createElement('div');
       card.className = 'cover';
 
       const img = document.createElement('img');
-      img.src = a.artworkUrl100.replace(/\/\d+x\d+bb\.\w+$/, '/800x800bb.jpg');
+      img.src = d.url;
       img.loading = 'lazy';
 
       const name = document.createElement('div');
       name.className = 'name';
-      name.textContent = a.collectionName;
-
-      const by = document.createElement('div');
-      by.className = 'by';
-      const year = a.releaseDate ? a.releaseDate.slice(0, 4) : '';
-      by.textContent = a.artistName + (year ? ' • ' + year : '');
-
-      const b1 = document.createElement('button');
-      b1.className = 'dl';
-      b1.innerHTML = 'Standard quality<small>3000 × 3000 JPG</small>';
-      b1.onclick = () => openInApp(stdArt(a.artworkUrl100));
-
-      const b2 = document.createElement('button');
-      b2.className = 'dl hi';
-      b2.innerHTML = 'Uncompressed<small>Original file, full size</small>';
-      b2.onclick = () => openInApp(rawArt(a.artworkUrl100));
+      name.textContent = d.title;
 
       card.appendChild(img);
       card.appendChild(name);
-      card.appendChild(by);
-      card.appendChild(b1);
-      card.appendChild(b2);
+
+      if (isApp) {
+        makeLinkButton(card, 'App icon', '1024 × 1024', d.url, true);
+        if (d.appstore) makeLinkButton(card, 'View on the App Store', 'Opens the store page', d.appstore, false);
+      } else {
+        makeLinkButton(card, 'Standard Resolution', '600 × 600', d.url, false);
+        if (d.uncompressed) {
+          makeLinkButton(card, 'Uncompressed High Resolution', 'The original file, full quality (large)', d.uncompressed, true);
+          makeCopyButton(card, d.uncompressed);
+        } else {
+          makeLinkButton(card, 'High Resolution', 'Largest version available', d.hires, true);
+        }
+      }
       box.appendChild(card);
     });
   } catch (e) {
