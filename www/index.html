@@ -276,20 +276,20 @@ function processResults(json, entity) {
     const d = {};
     d.url = art.replace('100x100', '600x600');
 
-    // High resolution link (original site: is5-ssl.mzstatic.com + path)
+    // High resolution link
     let hires = art.replace('100x100bb', '100000x100000-999');
     try {
       hires = 'https://is5-ssl.mzstatic.com' + new URL(hires).pathname;
     } catch (e) {}
     d.hires = hires;
 
-    // Uncompressed original (albums only) - the big file
+    // Uncompressed (albums only) - same link the real website gives now
     if (entity === 'album' || entity === 'idAlbum') {
       const parts = hires.split('/image/thumb/');
       if (parts.length === 2) {
         const segs = parts[1].split('/');
         segs.pop();
-        d.uncompressed = 'https://a5.mzstatic.com/us/r1000/0/' + segs.join('/');
+        d.uncompressed = 'https://is1-ssl.mzstatic.com/image/thumb/' + segs.join('/') + '/3000x3000bb-100.jpg';
       }
     }
 
@@ -394,7 +394,7 @@ async function searchCovers() {
       } else {
         makeLinkButton(card, 'Standard Resolution', '600 × 600', d.url, false);
         if (d.uncompressed) {
-          makeLinkButton(card, 'Uncompressed High Resolution', 'The original file, full quality (large)', d.uncompressed, true);
+          makeLinkButton(card, 'Uncompressed High Resolution', 'Full quality, 3000 × 3000 (large file)', d.uncompressed, true);
           makeCopyButton(card, d.uncompressed);
         } else {
           makeLinkButton(card, 'High Resolution', 'Largest version available', d.hires, true);
