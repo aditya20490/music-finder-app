@@ -1,0 +1,10 @@
+{
+  "appId": "com.musicfinder.app",
+  "appName": "Music Finder",
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
