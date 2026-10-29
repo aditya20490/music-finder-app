@@ -43,6 +43,7 @@
   input[type=text]:focus, select:focus { border-color: var(--accent); }
   .go { width: 100%; padding: 15px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; }
   .go:active { opacity: .85; }
+  .go:disabled { opacity: .55; }
 
   .msg { color: var(--sub); text-align: center; padding: 28px 10px; }
 
@@ -65,6 +66,23 @@
   .row .s { color: var(--sub); font-size: 14px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .row .pv { flex-shrink: 0; padding: 9px 12px; border: 0; border-radius: 10px; background: var(--card2); color: var(--text); font-weight: 600; font-size: 14px; }
 
+  /* downloader */
+  .dlrow { display: flex; gap: 8px; margin-top: 2px; }
+  .dlrow .go { flex: 2; }
+  .ghost { flex: 1; padding: 14px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--card2); color: var(--text); font-size: 15px; font-weight: 600; }
+  .ghost:active { opacity: .8; }
+  #dlCap { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card2); }
+  #dlCap p { margin: 0 0 10px; font-size: 13px; color: var(--sub); }
+  #dlCap img { display: block; background: #fff; border-radius: 8px; padding: 6px; max-width: 100%; margin-bottom: 10px; }
+  #dlCap input { width: 120px; margin-bottom: 0; display: inline-block; vertical-align: middle; }
+  #dlCap .ghost { width: auto; margin-left: 8px; padding: 12px 16px; }
+  #dlLog { margin-top: 12px; font-size: 13px; color: var(--sub); line-height: 1.6; }
+  #dlLog .good { color: #34c759; }
+  #dlLog .bad { color: #ff453a; }
+  #dlFiles { list-style: none; padding: 0; margin: 12px 0 0; font-size: 13px; }
+  #dlFiles li { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; word-break: break-all; }
+  #dlFiles li button { margin-top: 8px; padding: 7px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--sub); }
+
   nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: var(--card); border-top: 1px solid var(--line); }
   nav button { flex: 1; padding: 16px 0; background: none; border: 0; color: var(--sub); font-size: 15px; font-weight: 700; }
   nav button.active { color: var(--accent); }
@@ -75,8 +93,29 @@
 <!-- SONGS -->
 <div id="songs" class="page active">
   <div class="eyebrow">Apple Music</div>
-  <h1>Search Song</h1>
-  <p class="lead">Find any song. Tap a result to open its Apple Music page.</p>
+  <h1>Download</h1>
+  <p class="lead">Paste a song link, tap Download. It is grabbed in the background and saved to your Music folder.</p>
+
+  <div class="panel">
+    <label for="dlLink">Apple Music song link</label>
+    <input id="dlLink" type="text" placeholder="https://music.apple.com/us/song/..." spellcheck="false" autocapitalize="off" autocorrect="off">
+    <div class="dlrow">
+      <button class="ghost" id="dlPaste">Paste</button>
+      <button class="ghost" id="dlClear">Clear</button>
+      <button class="go" id="dlBtn">Download</button>
+    </div>
+
+    <div id="dlCap" hidden>
+      <p>Solve the sum and tap Proceed.</p>
+      <img id="dlCapImg" alt="Captcha">
+      <input id="dlCapInput" type="text" inputmode="numeric" placeholder="Answer">
+      <button class="ghost" id="dlCapGo">Proceed</button>
+    </div>
+
+    <div id="dlLog"></div>
+    <ul id="dlFiles"></ul>
+  </div>
+
   <div class="panel">
     <label for="songQ">Song or artist</label>
     <input id="songQ" type="text" placeholder="e.g. Tiffany">
@@ -133,12 +172,9 @@
   <button class="active" onclick="show('songs', this)">Songs</button>
   <button onclick="show('covers', this)">Covers</button>
   <button onclick="show('lyrics', this)">Lyrics</button>
-  <button onclick="openPrivate()">Private</button>
 </nav>
 
 <script>
-const PRIVATE_URL = 'https://aaplmusicdownloader.com/';
-
 const COUNTRY_LIST = "ae:United Arab Emirates|ag:Antigua and Barbuda|ai:Anguilla|al:Albania|am:Armenia|ao:Angola|ar:Argentina|at:Austria|au:Australia|az:Azerbaijan|bb:Barbados|be:Belgium|bf:Burkina-Faso|bg:Bulgaria|bh:Bahrain|bj:Benin|bm:Bermuda|bn:Brunei Darussalam|bo:Bolivia|br:Brazil|bs:Bahamas|bt:Bhutan|bw:Botswana|by:Belarus|bz:Belize|ca:Canada|cg:Democratic Republic of the Congo|ch:Switzerland|cl:Chile|cn:China|co:Colombia|cr:Costa Rica|cv:Cape Verde|cy:Cyprus|cz:Czech Republic|de:Germany|dk:Denmark|dm:Dominica|do:Dominican Republic|dz:Algeria|ec:Ecuador|ee:Estonia|eg:Egypt|es:Spain|fi:Finland|fj:Fiji|fm:Federated States of Micronesia|fr:France|gb:United Kingdom|gd:Grenada|gh:Ghana|gm:Gambia|gr:Greece|gt:Guatemala|gw:Guinea Bissau|gy:Guyana|hk:Hong Kong|hn:Honduras|hr:Croatia|hu:Hungary|id:Indonesia|ie:Ireland|il:Israel|in:India|is:Iceland|it:Italy|jm:Jamaica|jo:Jordan|jp:Japan|ke:Kenya|kg:Krygyzstan|kh:Cambodia|kn:Saint Kitts and Nevis|kr:South Korea|kw:Kuwait|ky:Cayman Islands|kz:Kazakhstan|la:Laos|lb:Lebanon|lc:Saint Lucia|lk:Sri Lanka|lr:Liberia|lt:Lithuania|lu:Luxembourg|lv:Latvia|md:Moldova|mg:Madagascar|mk:Macedonia|ml:Mali|mn:Mongolia|mo:Macau|mr:Mauritania|ms:Montserrat|mt:Malta|mu:Mauritius|mw:Malawi|mx:Mexico|my:Malaysia|mz:Mozambique|na:Namibia|ne:Niger|ng:Nigeria|ni:Nicaragua|nl:Netherlands|np:Nepal|no:Norway|nz:New Zealand|om:Oman|pa:Panama|pe:Peru|pg:Papua New Guinea|ph:Philippines|pk:Pakistan|pl:Poland|pt:Portugal|pw:Palau|py:Paraguay|qa:Qatar|ro:Romania|ru:Russia|sa:Saudi Arabia|sb:Soloman Islands|sc:Seychelles|se:Sweden|sg:Singapore|si:Slovenia|sk:Slovakia|sl:Sierra Leone|sn:Senegal|sr:Suriname|st:Sao Tome e Principe|sv:El Salvador|sz:Swaziland|tc:Turks and Caicos Islands|td:Chad|th:Thailand|tj:Tajikistan|tm:Turkmenistan|tn:Tunisia|tr:Turkey|tt:Republic of Trinidad and Tobago|tw:Taiwan|tz:Tanzania|ua:Ukraine|ug:Uganda|us:United States of America|uy:Uruguay|uz:Uzbekistan|vc:Saint Vincent and the Grenadines|ve:Venezuela|vg:British Virgin Islands|vn:Vietnam|ye:Yemen|za:South Africa|zw:Zimbabwe";
 
 function fillRegions() {
@@ -187,17 +223,6 @@ function openInApp(url) {
     }
   } catch (e) {}
   window.open(url, '_blank');
-}
-
-// Opens the private link in Chrome, asking for an incognito tab
-async function openPrivate() {
-  try {
-    if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Incognito) {
-      await Capacitor.Plugins.Incognito.open({ url: PRIVATE_URL });
-      return;
-    }
-  } catch (e) {}
-  window.open(PRIVATE_URL, '_blank');
 }
 
 function appleUrl(u) {
@@ -433,5 +458,6 @@ document.getElementById('songQ').addEventListener('keydown', e => { if (e.key ==
 document.getElementById('coverQ').addEventListener('keydown', e => { if (e.key === 'Enter') searchCovers(); });
 document.getElementById('lyricQ').addEventListener('keydown', e => { if (e.key === 'Enter') searchLyrics(); });
 </script>
+<script src="js/downloader.js"></script>
 </body>
 </html>
