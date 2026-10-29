@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Downloader</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0b0b0d; color: #e8e8ea;
+    font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: 90px;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border-bottom: 1px solid #1e1e22;
+    position: sticky; top: 0; background: #0b0b0d; z-index: 5;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  #back {
+    background: none; border: 0; color: #e8e8ea; font-size: 26px;
+    line-height: 1; padding: 0 4px; cursor: pointer;
+  }
+  main { padding: 18px 16px; }
+  label { display: block; font-size: 13px; color: #9a9aa2; margin-bottom: 8px; }
+  textarea {
+    width: 100%; background: #15151a; color: #e8e8ea; border: 1px solid #26262d;
+    border-radius: 12px; padding: 12px; font: inherit; resize: vertical; min-height: 74px;
+  }
+  textarea:focus { outline: none; border-color: #3b6fe0; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  button {
+    background: #1b1b21; color: #e8e8ea; border: 1px solid #2a2a32;
+    border-radius: 11px; padding: 11px 16px; font: inherit; cursor: pointer;
+  }
+  button:disabled { opacity: .55; }
+  .primary { background: #3b6fe0; border-color: #3b6fe0; color: #fff; font-weight: 600; flex: 1; }
+  #captchaBox {
+    margin-top: 18px; padding: 14px; border: 1px solid #2a2a32; border-radius: 12px;
+    background: #121217;
+  }
+  #captchaBox p { margin: 0 0 10px; font-size: 13px; color: #9a9aa2; }
+  #captchaImg {
+    display: block; background: #fff; border-radius: 8px; padding: 6px;
+    max-width: 100%; margin-bottom: 10px;
+  }
+  #captchaInput {
+    width: 130px; background: #15151a; color: #e8e8ea; border: 1px solid #26262d;
+    border-radius: 9px; padding: 10px; font: inherit; margin-right: 8px;
+  }
+  #status { margin-top: 18px; font-size: 13px; }
+  .log { padding: 3px 0; color: #9a9aa2; }
+  .log.good { color: #4ec97b; }
+  .log.bad { color: #ef6b6b; }
+  #files { list-style: none; padding: 0; margin: 22px 0 0; font-size: 13px; }
+  #files li {
+    padding: 10px 12px; background: #121217; border: 1px solid #22222a;
+    border-radius: 10px; margin-bottom: 8px; word-break: break-all;
+  }
+  #files li button { margin-top: 8px; padding: 6px 12px; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <button id="back" aria-label="Back">&lsaquo;</button>
+  <h1>Apple Music Downloader</h1>
+</header>
+
+<main>
+  <label for="link">Apple Music song link</label>
+  <textarea id="link" placeholder="https://music.apple.com/us/song/…" spellcheck="false"></textarea>
+
+  <div class="row">
+    <button id="pasteBtn">Paste</button>
+    <button id="clearBtn">Clear</button>
+    <button id="dlBtn" class="primary">Download</button>
+  </div>
+
+  <div id="captchaBox" hidden>
+    <p>Type the answer to the sum in the image.</p>
+    <img id="captchaImg" alt="Captcha">
+    <input id="captchaInput" type="number" inputmode="numeric" placeholder="Answer">
+    <button id="captchaGo">Proceed</button>
+  </div>
+
+  <div id="status"></div>
+  <ul id="files"></ul>
+</main>
+
+<script src="js/downloader.js"></script>
+</body>
+</html>
