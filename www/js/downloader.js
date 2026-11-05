@@ -1,195 +1,87 @@
-/* www/js/downloader.js — drives the native Incognito plugin. */
+/* www/js/downloader.js
+ * Download button -> Task Automator engine.
+ * The recorded steps live in task/apple-music.task.json; only the song link changes per run.
+ */
 (function () {
   'use strict';
 
-  var $ = function (id) { return document.getElementById(id); };
-  var linkEl = $('link');
-  var dlBtn = $('dlBtn');
-  var statusEl = $('status');
-  var filesEl = $('files');
-  var capBox = $('captchaBox');
-  var capImg = $('captchaImg');
-  var capInput = $('captchaInput');
-  var capGo = $('captchaGo');
+  var TASK_FILE = 'task/apple-music.task.json';
+  var TYPE_SELECTOR = '#id_url';          // the typing step whose text is replaced by the user's link
 
-  var plugin = null;
-  var listener = null;
-  var meta = null;
-  var busy = false;
+  var $ = function (id) { return document.getElementById(id); };
+  var linkEl = $('dlLink');
+  var btn = $('dlBtn');
+  var logEl = $('dlLog');
+  var capBox = $('dlCap');
+
+  function plugin() {
+    return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TaskAutomator;
+  }
 
   function log(text, kind) {
     var row = document.createElement('div');
-    row.className = 'log' + (kind ? ' ' + kind : '');
+    if (kind) { row.className = kind; }
     row.textContent = text;
-    statusEl.appendChild(row);
-    statusEl.scrollTop = statusEl.scrollHeight;
-  }
-
-  function setBusy(v) {
-    busy = v;
-    dlBtn.disabled = v;
-    dlBtn.textContent = v ? 'Working…' : 'Download';
-  }
-
-  function reset() {
-    statusEl.innerHTML = '';
-    capBox.hidden = true;
-    capInput.value = '';
-    meta = null;
-  }
-
-  function stop() {
-    capBox.hidden = true;
-    setBusy(false);
-    if (plugin) { plugin.cancel().catch(function () {}); }
-  }
-
-  function fail(message) {
-    log(message, 'bad');
-    stop();
+    logEl.appendChild(row);
   }
 
   function normalise(raw) {
     var v = (raw || '').trim();
     if (!v) { return null; }
     if (!/^https?:\/\//i.test(v)) { v = 'https://' + v; }
-    if (!/music\.apple\.com\/[a-z]{2}\/song\//i.test(v)) { return null; }
+    if (!/music\.apple\.com\//i.test(v)) { return null; }
+    if (!/\/song\//i.test(v) && !/[?&]i=\d+/.test(v)) { return null; }   // song link, or album link with ?i=
     return v;
   }
 
-  function safeName(track, artist) {
-    var base = (artist ? artist + ' - ' : '') + (track || 'track');
-    return base.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 110) + '.m4a';
-  }
-
-  function onMessage(raw) {
-    var m;
-    try { m = JSON.parse(raw); } catch (e) { return; }
-
-    switch (m.type) {
-      case 'stage':
-        if (m.stage === 'searching') { log('Reading the link…'); }
-        else if (m.stage === 'song') {
-          meta = { track: m.track, artist: m.artist };
-          log('Found: ' + m.artist + ' — ' + m.track);
-        }
-        else if (m.stage === 'generating') { log('Requesting the download link…'); }
-        else if (m.stage === 'fetching') { log('Fetching the original m4a…'); }
-        else if (m.stage === 'done') { handleDownload(m.url); }
-        else if (m.stage === 'limit') { fail('Daily limit reached on the site (3 songs). Try again tomorrow.'); }
-        else if (m.stage === 'album') { fail('That is an album or playlist link. Paste a single song link.'); }
-        else if (m.stage === 'error') { fail(m.message || 'Something went wrong.'); }
-        break;
-
-      case 'captcha':
-        capImg.src = m.img;
-        capBox.hidden = false;
-        log('Captcha required — solve it below.');
-        capInput.focus();
-        break;
-
-      case 'captcha-ok':
-        capBox.hidden = true;
-        capInput.value = '';
-        log('Captcha accepted.');
-        break;
-
-      case 'captcha-wrong':
-        log('Wrong answer, try again.', 'bad');
-        capInput.value = '';
-        capInput.focus();
-        break;
-
-      case 'download':
-        handleDownload(m.url);
-        break;
-
-      case 'error':
-        fail(m.message || 'Something went wrong.');
-        break;
-    }
-  }
-
-  async function handleDownload(url) {
-    if (!meta) { return fail('Download link arrived without track data.'); }
-    var name = safeName(meta.track, meta.artist);
-    log('Handing to the download manager…');
-
-    try {
-      await plugin.save({ url: url, name: name });
-      log('Queued: ' + name, 'good');
-
-      var li = document.createElement('li');
-      li.textContent = name;
-      filesEl.prepend(li);
-
-      var Cap = window.Capacitor;
-      if (Cap && Cap.Plugins && Cap.Plugins.Share) {
-        var share = document.createElement('button');
-        share.textContent = 'Share';
-        share.onclick = function () {
-          Cap.Plugins.Share.share({
-            title: name,
-            url: 'file:///storage/emulated/0/Music/' + encodeURIComponent(name)
-          }).catch(function () {});
-        };
-        li.appendChild(share);
-      }
-      stop();
-    } catch (e) {
-      fail('Could not start the download: ' + (e.message || e));
-    }
-  }
-
   async function start() {
-    if (busy) { return; }
+    logEl.innerHTML = '';
+    if (capBox) { capBox.hidden = true; }    // the real site page shows its own captcha, if any
 
     var link = normalise(linkEl.value);
     if (!link) {
-      log('That is not a valid Apple Music song link.', 'bad');
+      log('That is not an Apple Music song link.', 'bad');
       return;
     }
 
-    plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Incognito;
-    if (!plugin) {
-      log('The Incognito plugin is not registered in MainActivity.', 'bad');
+    var p = plugin();
+    if (!p) {
+      log('Task Automator is not available in this build.', 'bad');
       return;
     }
 
-    reset();
-    setBusy(true);
-    log('Opening the site…');
-
-    if (listener) { listener.remove(); }
-    listener = await plugin.addListener('message', function (e) { onMessage(e.raw); });
-
+    btn.disabled = true;
     try {
-      await plugin.start({ link: link });
+      log('Loading the task…');
+      var res = await fetch(TASK_FILE, { cache: 'no-store' });
+      if (!res.ok) { throw new Error('task file missing'); }
+      var template = await res.text();
+
+      log('Starting — a browser screen opens and does the steps for you.');
+      var out = await p.run({ template: template, link: link, selector: TYPE_SELECTOR });
+      log('Running ' + out.steps + ' steps. The file lands in your Downloads folder.', 'good');
     } catch (e) {
-      fail('Could not start: ' + (e.message || e));
+      log('Could not start: ' + (e && e.message ? e.message : e), 'bad');
+    } finally {
+      setTimeout(function () { btn.disabled = false; }, 1500);
     }
   }
 
-  dlBtn.addEventListener('click', start);
+  btn.addEventListener('click', start);
 
-  capGo.addEventListener('click', function () {
-    var answer = parseInt(capInput.value, 10);
-    if (isNaN(answer) || !plugin) { capInput.focus(); return; }
-    capGo.disabled = true;
-    plugin.answerCaptcha({ answer: answer }).catch(function () {});
-    setTimeout(function () { capGo.disabled = false; }, 800);
-  });
-
-  $('pasteBtn').addEventListener('click', async function () {
+  $('dlPaste').addEventListener('click', async function () {
     try { linkEl.value = await navigator.clipboard.readText(); }
-    catch (e) { log('Clipboard blocked — paste manually.', 'bad'); }
+    catch (e) { log('Clipboard blocked — paste it by hand.', 'bad'); }
   });
 
-  $('clearBtn').addEventListener('click', function () {
+  $('dlClear').addEventListener('click', function () {
     linkEl.value = '';
-    statusEl.innerHTML = '';
-    capBox.hidden = true;
+    logEl.innerHTML = '';
   });
 
-  $('back').addEventListener('click', function () { location.href = 'index.html'; });
+  /* bottom-nav "Automate" button */
+  window.openAutomator = function () {
+    var p = plugin();
+    if (p) { p.openHome().catch(function () {}); }
+  };
 })();
