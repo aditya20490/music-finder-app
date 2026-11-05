@@ -1,0 +1,20 @@
+{
+  "format": "task-automator",
+  "version": 1,
+  "exported": 1793863911804,
+  "project": {
+    "id": "d6c5f530-7db2-4fc9-b5a8-006a0701b990",
+    "name": "Dudu",
+    "url": "https://aaplmusicdownloader.com/song.php",
+    "created": 1793863766411,
+    "steps": [
+      {"type": "click", "selector": "#id_url", "tag": "input", "text": "Paste Apple Music link here: https://music.apple.c", "xr": 0.3783783783783784, "yr": 0.7933130699088146, "sy": 0, "wait": 6516},
+      {"type": "type", "selector": "#id_url", "value": "https://music.apple.com/us/song/casa-tupka-anthemo-feat-priyanshi/6813073500", "label": "Paste Apple Music link here: https://music.apple.com/us/playlist/...", "secret": false, "wait": 870},
+      {"type": "click", "selector": "#search", "tag": "button", "text": "download", "xr": 0.8157248157248157, "yr": 0.5484764542936288, "sy": 325.81817626953125, "wait": 841},
+      {"type": "click", "selector": "#download_btn", "tag": "a", "text": "Generate Download Link", "xr": 0.5025510204081632, "yr": 0.7993680884676145, "sy": 0, "wait": 3735},
+      {"type": "click", "selector": "#qquality", "tag": "select", "text": "--Select Audio Quality-- M4a (Original File) 128 K", "xr": 0.5408163265306123, "yr": 0.7424960505529226, "sy": 0, "wait": 1433},
+      {"type": "select", "selector": "#qquality", "value": "m4a", "wait": 1030},
+      {"type": "click", "selector": "#qquality", "tag": "select", "text": "--Select Audio Quality-- M4a (Original File) 128 K", "xr": 0, "yr": 0, "sy": 0, "wait": 300}
+    ]
+  }
+}
