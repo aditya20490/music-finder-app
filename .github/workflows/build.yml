@@ -12,6 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Task Automator stays in its own repo; it is pulled in fresh on every build.
+      - name: Get Task Automator
+        uses: actions/checkout@v4
+        with:
+          repository: aditya20490/Task-automater
+          path: task-automater
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -33,6 +40,9 @@ jobs:
           mkdir -p $DIR
           cp native/IncognitoPlugin.java $DIR/IncognitoPlugin.java
           cp native/MainActivity.java $DIR/MainActivity.java
+
+      - name: Merge Task Automator
+        run: python3 native/merge_automator.py task-automater android native
 
       - name: Sync
         run: npx cap sync android
