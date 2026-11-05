@@ -1,463 +1,1365 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Music Finder</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0f1a">
+<title>Stereo 3D</title>
 <style>
-  :root {
-    --bg: #000;
-    --card: #111;
-    --card2: #1b1b1d;
-    --line: #2a2a2d;
-    --text: #f5f5f7;
-    --sub: #8e8e93;
-    --accent: #fa2d48;
-  }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg: #f5f5f7;
-      --card: #fff;
-      --card2: #ececf0;
-      --line: #d8d8de;
-      --text: #1d1d1f;
-      --sub: #6e6e73;
-    }
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; padding-bottom: 84px; }
-  .page { display: none; padding: 20px 16px; max-width: 640px; margin: 0 auto; }
-  .page.active { display: block; }
-
-  .eyebrow { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
-  h1 { margin: 0 0 8px; font-size: 30px; line-height: 1.15; }
-  .lead { color: var(--sub); font-size: 16px; line-height: 1.5; margin: 0 0 20px; }
-
-  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 18px; }
-  label { display: block; font-size: 13px; font-weight: 600; color: var(--sub); margin: 0 0 6px 2px; }
-  select, input[type=text] {
-    width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--line);
-    background: var(--card2); color: var(--text); font-size: 16px; margin-bottom: 12px; outline: none;
-    -webkit-appearance: none; appearance: none;
-  }
-  input[type=text]:focus, select:focus { border-color: var(--accent); }
-  .go { width: 100%; padding: 15px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; }
-  .go:active { opacity: .85; }
-  .go:disabled { opacity: .55; }
-
-  .msg { color: var(--sub); text-align: center; padding: 28px 10px; }
-
-  /* cover cards */
-  .cover { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px; margin-bottom: 16px; }
-  .cover img { width: 100%; height: auto; border-radius: 12px; background: var(--card2); display: block; }
-  .cover .name { font-size: 18px; font-weight: 700; margin: 12px 4px 10px; line-height: 1.3; }
-  .dl { display: block; width: 100%; text-align: left; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card2); color: var(--text); font-size: 16px; font-weight: 600; margin-top: 8px; }
-  .dl small { display: block; color: var(--sub); font-weight: 400; font-size: 13px; margin-top: 2px; }
-  .dl.hi { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .dl.hi small { color: rgba(255,255,255,.85); }
-  .cp { display: block; width: 100%; padding: 10px; border: 0; background: none; color: var(--sub); font-size: 14px; margin-top: 4px; }
-  .tip { color: var(--sub); font-size: 13px; line-height: 1.5; margin: 4px 2px 18px; }
-
-  /* song rows */
-  .row { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px; margin-bottom: 10px; align-items: center; }
-  .row img { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; background: var(--card2); flex-shrink: 0; }
-  .row .info { min-width: 0; flex: 1; }
-  .row .t { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row .s { color: var(--sub); font-size: 14px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row .pv { flex-shrink: 0; padding: 9px 12px; border: 0; border-radius: 10px; background: var(--card2); color: var(--text); font-weight: 600; font-size: 14px; }
-
-  /* downloader */
-  .dlrow { display: flex; gap: 8px; margin-top: 2px; }
-  .dlrow .go { flex: 2; }
-  .ghost { flex: 1; padding: 14px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--card2); color: var(--text); font-size: 15px; font-weight: 600; }
-  .ghost:active { opacity: .8; }
-  #dlCap { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card2); }
-  #dlCap p { margin: 0 0 10px; font-size: 13px; color: var(--sub); }
-  #dlCap img { display: block; background: #fff; border-radius: 8px; padding: 6px; max-width: 100%; margin-bottom: 10px; }
-  #dlCap input { width: 120px; margin-bottom: 0; display: inline-block; vertical-align: middle; }
-  #dlCap .ghost { width: auto; margin-left: 8px; padding: 12px 16px; }
-  #dlLog { margin-top: 12px; font-size: 13px; color: var(--sub); line-height: 1.6; }
-  #dlLog .good { color: #34c759; }
-  #dlLog .bad { color: #ff453a; }
-  #dlFiles { list-style: none; padding: 0; margin: 12px 0 0; font-size: 13px; }
-  #dlFiles li { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; word-break: break-all; }
-  #dlFiles li button { margin-top: 8px; padding: 7px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--sub); }
-
-  nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: var(--card); border-top: 1px solid var(--line); }
-  nav button { flex: 1; padding: 16px 0; background: none; border: 0; color: var(--sub); font-size: 15px; font-weight: 700; }
-  nav button.active { color: var(--accent); }
+:root{--bg:#0b0f1a;--card:#151b2b;--line:#252d42;--acc:#4f8cff;--acc2:#8a5cff;--txt:#eef1f8;--mut:#8b94ab;--ok:#22c55e;--bad:#ef4444}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Roboto,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
+#app{display:flex;flex-direction:column;height:100dvh}
+header{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line)}
+header svg.logo{width:30px;height:30px}
+header h1{font-size:19px;margin:0;flex:1;letter-spacing:.3px}
+.ib{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:17px}
+.view{display:none;flex:1;min-height:0;position:relative}
+.view.on{display:flex}
+nav{display:flex;border-top:1px solid var(--line);background:var(--card);padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;padding:10px 0 8px;background:none;border:0;color:var(--mut);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--acc)}
+.btn{border:0;border-radius:14px;padding:14px 22px;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));display:inline-block}
+.btn.alt{background:var(--card);border:1px solid var(--line);font-weight:500}
+.btn.ok{background:var(--ok)}
+.btn.bad{background:var(--bad)}
+/* camera */
+#cam,#ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#ghost{opacity:.4;display:none;pointer-events:none}
+#cross{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px;border:2px solid #3dff8f;border-radius:50%;pointer-events:none}
+#cross:after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;background:#3dff8f;border-radius:50%}
+#hint{position:absolute;top:12px;left:12px;right:12px;padding:10px 14px;background:#000b;border-radius:12px;font-size:14px;text-align:center}
+#warn{color:#ff7b7b;font-weight:700}
+#camBar{position:absolute;bottom:0;left:0;right:0;padding:16px;display:flex;align-items:center;justify-content:center;gap:18px;background:linear-gradient(transparent,#000a)}
+#shutter{width:74px;height:74px;border-radius:50%;background:#fff;border:6px solid #9aa3b8}
+#dir{padding:12px 16px;border-radius:24px;border:1px solid #fff5;background:#0008;color:#fff;font-size:15px}
+/* photo + video start screens */
+#v-photo,#v-video{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:14px}
+.hero{width:120px;height:120px;border-radius:30px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.hero svg{width:60px;height:60px;stroke:var(--acc);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#v-photo h2,#v-video h2{margin:6px 0 0;font-size:22px}
+#v-photo p,#v-video p{margin:0;color:var(--mut);font-size:14px;max-width:320px;line-height:1.45}
+#pstatus,#sgstatus{color:#9cc2ff;font-size:14px;min-height:20px}
+#pbar,#sgbar{width:220px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:none}
+#pfill,#sgfill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .2s}
+/* stereogram start screen */
+#v-sg{flex-direction:column;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch}
+.sgwrap{margin:auto;width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+.sgwrap h2{margin:0;font-size:22px}
+.sgwrap p{margin:0;color:var(--mut);font-size:14px;line-height:1.45}
+.sgbox{width:100%;display:flex;flex-direction:column;gap:12px;align-items:center}
+#sgtext{width:100%;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:18px;padding:12px 14px;font-family:inherit;resize:none;user-select:text;-webkit-user-select:text;outline:none}
+#sgtext:focus{border-color:var(--acc)}
+/* library */
+#v-lib{flex-direction:column;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
+#libHead{font-size:13px;color:var(--mut);margin:0 2px 10px}
+#libGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.thumb{width:100%;border-radius:12px;border:1px solid var(--line);background-color:var(--card);background-repeat:no-repeat;background-size:200% 100%;background-position:left center;position:relative;overflow:hidden}
+.thumb i{position:absolute;right:6px;bottom:6px;font-style:normal;font-size:11px;background:#000a;border-radius:8px;padding:2px 7px}
+#libEmpty{display:none;text-align:center;color:var(--mut);margin:auto;line-height:1.5;padding:30px}
+/* overlays */
+.full{position:fixed;inset:0;background:#000;display:none;z-index:50}
+.full canvas,.full img.big,.full video.big{width:100%;height:100%;object-fit:contain;display:block}
+.full.hide .ui{display:none}
+.top{position:absolute;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(#000c,transparent)}
+.pill{border:0;border-radius:22px;padding:10px 18px;font-size:15px;font-weight:600;color:#fff;background:#ffffff26;backdrop-filter:blur(6px)}
+.xbtn{width:40px;height:40px;border-radius:50%;border:0;background:#ffffff26;color:#fff;font-size:20px}
+.bot{position:absolute;left:0;right:0;bottom:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#000d);display:flex;flex-direction:column;gap:8px;align-items:center;max-height:75%;overflow:auto}
+.seg{display:flex;border:1px solid #fff4;border-radius:12px;overflow:hidden}
+.seg button{background:#0009;color:#fff;border:0;padding:9px 14px;font-size:14px}
+.seg button.on{background:var(--acc)}
+.sl{width:90%;max-width:420px;font-size:13px;color:#cfd6e8;text-align:center}
+.sl input{width:100%}
+.sgctl{display:none;flex-direction:column;gap:8px;align-items:center;width:100%}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.row .btn{padding:11px 20px;font-size:15px;min-width:130px}
+.tip{font-size:12px;color:#aab3c9;text-align:center}
+/* video render progress */
+#vprog{position:absolute;inset:0;background:#000c;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:5}
+#vpbar{width:240px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+#vpfill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+/* help */
+#help{position:fixed;inset:0;background:#000c;display:none;z-index:60;align-items:flex-end}
+#help .sheet{background:var(--card);width:100%;border-radius:22px 22px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto;user-select:text}
+#help h3{margin:0 0 10px}
+#help ol{margin:0 0 14px;padding-left:20px;color:#cfd6e8;line-height:1.6;font-size:15px}
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#000d;color:#fff;border:1px solid #fff3;border-radius:20px;padding:9px 18px;font-size:14px;z-index:99;display:none}
 </style>
 </head>
 <body>
+<div id="app">
+  <header>
+    <svg class="logo" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset="1" stop-color="#8a5cff"/></linearGradient></defs><rect x="2" y="6" width="16" height="20" rx="4" fill="url(#g)"/><rect x="14" y="6" width="16" height="20" rx="4" fill="none" stroke="#8a5cff" stroke-width="2"/></svg>
+    <h1>Stereo 3D</h1>
+    <button class="ib" id="helpBtn">?</button>
+  </header>
 
-<!-- SONGS -->
-<div id="songs" class="page active">
-  <div class="eyebrow">Apple Music</div>
-  <h1>Download</h1>
-  <p class="lead">Paste a song link, tap Download. It is grabbed in the background and saved to your Music folder.</p>
-
-  <div class="panel">
-    <label for="dlLink">Apple Music song link</label>
-    <input id="dlLink" type="text" placeholder="https://music.apple.com/us/song/..." spellcheck="false" autocapitalize="off" autocorrect="off">
-    <div class="dlrow">
-      <button class="ghost" id="dlPaste">Paste</button>
-      <button class="ghost" id="dlClear">Clear</button>
-      <button class="go" id="dlBtn">Download</button>
+  <section class="view on" id="v-cam">
+    <video id="cam" autoplay playsinline muted></video>
+    <img id="ghost" alt="">
+    <div id="cross"></div>
+    <div id="hint"><div id="txt">Starting camera...</div><div id="warn"></div></div>
+    <div id="camBar">
+      <button id="dir">Move RIGHT &rarr;</button>
+      <button id="shutter" aria-label="Capture"></button>
     </div>
+  </section>
 
-    <div id="dlCap" hidden>
-      <p>Solve the sum and tap Proceed.</p>
-      <img id="dlCapImg" alt="Captcha">
-      <input id="dlCapInput" type="text" inputmode="numeric" placeholder="Answer">
-      <button class="ghost" id="dlCapGo">Proceed</button>
+  <section class="view" id="v-photo">
+    <div class="hero"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 9"/></svg></div>
+    <h2>Photo to 3D</h2>
+    <p>Pick any photo from your gallery. AI estimates depth and builds a 3D pair you can view with your eyes.</p>
+    <div id="pbar"><div id="pfill"></div></div>
+    <div id="pstatus"></div>
+    <label class="btn" id="pickBtn">Choose Photo<input type="file" id="file" accept="image/*" hidden></label>
+    <button class="btn alt" id="again" style="display:none">View last result</button>
+  </section>
+
+  <section class="view" id="v-video">
+    <div class="hero"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="13" height="12" rx="3"/><path d="M15.5 10l6-3v10l-6-3z"/></svg></div>
+    <h2>Video 3D</h2>
+    <p>Film in landscape while sliding the phone slowly sideways, or pick a video you already have. It becomes a 3D video you can view with your eyes. The video is silent.</p>
+    <label class="btn">Choose Video<input type="file" id="vfile" accept="video/*" hidden></label>
+    <label class="btn alt">Record Video<input type="file" id="vrec" accept="video/*" capture="environment" hidden></label>
+  </section>
+
+  <section class="view" id="v-sg">
+    <div class="sgwrap">
+      <h2>Stereogram Maker</h2>
+      <p>Make a colorful stereogram with a secret hidden inside. It only shows up when you view it the stereogram way.</p>
+      <div class="seg" id="sgModeSeg" style="border-color:var(--line)">
+        <button id="sgModeT" class="on">Hidden text</button><button id="sgModeP">Hidden photo</button>
+      </div>
+      <div class="sgbox" id="sgTextBox">
+        <textarea id="sgtext" rows="3" maxlength="60" placeholder="Type your secret message. New line = new row."></textarea>
+        <button class="btn" id="sgcreate">Create Stereogram</button>
+      </div>
+      <div class="sgbox" id="sgPhotoBox" style="display:none">
+        <p>Pick a photo. The main subject (the thing closest to the camera) gets hidden inside the stereogram as a 3D shape.</p>
+        <div id="sgbar"><div id="sgfill"></div></div>
+        <div id="sgstatus"></div>
+        <label class="btn">Choose Photo<input type="file" id="sgfile" accept="image/*" hidden></label>
+      </div>
     </div>
+  </section>
 
-    <div id="dlLog"></div>
-    <ul id="dlFiles"></ul>
-  </div>
+  <section class="view" id="v-lib">
+    <div id="libHead"></div>
+    <div id="libGrid"></div>
+    <div id="libEmpty">No pictures yet.<br>Every 3D picture you make shows up here automatically.</div>
+  </section>
 
-  <div class="panel">
-    <label for="songQ">Song or artist</label>
-    <input id="songQ" type="text" placeholder="e.g. Tiffany">
-    <button class="go" onclick="searchSongs()">Search</button>
-  </div>
-  <div id="songOut"></div>
+  <nav>
+    <button class="tab on" data-t="cam"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Camera 3D</button>
+    <button class="tab" data-t="photo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 9"/></svg>Photo 3D</button>
+    <button class="tab" data-t="video"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="13" height="12" rx="3"/><path d="M15.5 10l6-3v10l-6-3z"/></svg>Video 3D</button>
+    <button class="tab" data-t="sg"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8" cy="9" r="1"/><circle cx="13" cy="8" r="1"/><circle cx="17" cy="11" r="1"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="15" r="1"/></svg>Stereogram</button>
+    <button class="tab" data-t="lib"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Library</button>
+  </nav>
 </div>
 
-<!-- COVERS -->
-<div id="covers" class="page">
-  <div class="eyebrow">iTunes Artwork Finder</div>
-  <h1>Album Cover</h1>
-  <p class="lead">Same method as the real artwork finder: standard and uncompressed covers.</p>
-  <div class="panel">
-    <label for="entity">Media</label>
-    <select id="entity">
-      <option value="album" selected>Album</option>
-      <option value="idAlbum">Apple ID (Album)</option>
-      <option value="tvSeason">TV Show</option>
-      <option value="movie">Movie</option>
-      <option value="ebook">iBook</option>
-      <option value="software">App (iPhone or Universal)</option>
-      <option value="iPadSoftware">App (iPad)</option>
-      <option value="macSoftware">App (macOS)</option>
-      <option value="audiobook">Audiobook</option>
-      <option value="podcast">Podcast</option>
-      <option value="musicVideo">Music Video (may not work)</option>
-      <option value="id">Apple ID (Movie)</option>
-      <option value="shortFilm">Short Film</option>
-    </select>
-    <label for="region">Region</label>
-    <select id="region"></select>
-    <label for="coverQ">Search</label>
-    <input id="coverQ" type="text" placeholder="e.g. Montero">
-    <button class="go" onclick="searchCovers()">Get the artwork</button>
+<!-- hidden source video for Video 3D -->
+<video id="vid" playsinline muted style="position:fixed;left:-9999px;top:0;width:2px;height:2px"></video>
+
+<!-- viewer for a fresh photo / camera / stereogram result -->
+<div class="full" id="viewer">
+  <canvas id="out"></canvas>
+  <div class="top ui"><button class="pill" id="vshare">Share</button><button class="xbtn" id="vclose">&#10005;</button></div>
+  <div class="bot ui">
+    <div class="tip" id="vtip">Rotate to landscape. Tap the picture to hide or show controls.</div>
+    <div class="sl" id="strRow">3D strength: <b id="sv">3</b>%<input type="range" id="str" min="0.5" max="8" step="0.5" value="3"></div>
+    <div class="sgctl" id="sgRow">
+      <div class="sl">Depth: <b id="sgdv">33</b><input type="range" id="sgdep" min="15" max="50" step="1" value="33"></div>
+      <div class="sl">Pattern size: <b id="sgpv">24</b><input type="range" id="sgper" min="16" max="36" step="1" value="24"></div>
+      <div class="sl" id="cutRow" style="display:none">Subject cutoff: <b id="sgcv">0</b><input type="range" id="sgcut" min="-40" max="40" step="1" value="0"></div>
+      <div class="seg" id="palSeg"></div>
+    </div>
+    <div class="seg"><button id="mPar" class="on">Parallel</button><button id="mCross">Cross-eye</button></div>
+    <div class="row"><button class="btn" id="save">Save to gallery</button><button class="btn alt" id="retake">Done</button></div>
   </div>
-  <div id="coverOut"></div>
 </div>
 
-<!-- LYRICS -->
-<div id="lyrics" class="page">
-  <div class="eyebrow">Lyricsify</div>
-  <h1>Search Lyrics</h1>
-  <p class="lead">Type a song or artist. The real Lyricsify page opens right inside the app.</p>
-  <div class="panel">
-    <label for="lyricQ">Song or artist</label>
-    <input id="lyricQ" type="text" placeholder="e.g. Lil Nas X">
-    <button class="go" onclick="searchLyrics()">Search</button>
+<!-- viewer for Video 3D -->
+<div class="full" id="vviewer">
+  <canvas id="vout"></canvas>
+  <div class="top ui"><button class="pill" id="vvshare">Share</button><button class="xbtn" id="vvclose">&#10005;</button></div>
+  <div class="bot ui">
+    <div class="tip">Rotate to landscape. Tap the picture to hide or show controls.</div>
+    <div class="sl">3D strength (frame gap): <b id="vdv">100</b> ms<input type="range" id="vdelay" min="20" max="300" step="10" value="100"></div>
+    <div class="row">
+      <div class="seg"><button id="dRight" class="on">Moved right</button><button id="dLeft">Moved left</button></div>
+      <div class="seg"><button id="vPar" class="on">Parallel</button><button id="vCross">Cross-eye</button></div>
+    </div>
+    <div class="row"><button class="btn alt" id="vplay">Pause</button><button class="btn" id="vsave" data-l="Save video">Save video</button><button class="btn alt" id="vdone">Done</button></div>
   </div>
-  <div class="tip">Use the close button on the top left of the opened page to come back here.</div>
+  <div id="vprog">
+    <div id="vptxt">Rendering 3D video... 0%</div>
+    <div id="vpbar"><div id="vpfill"></div></div>
+    <div class="tip">Keep the app open until it finishes</div>
+    <button class="btn alt" id="vpcancel">Cancel</button>
+  </div>
 </div>
 
-<nav>
-  <button class="active" onclick="show('songs', this)">Songs</button>
-  <button onclick="show('covers', this)">Covers</button>
-  <button onclick="show('lyrics', this)">Lyrics</button>
-</nav>
+<!-- viewer for a library item -->
+<div class="full" id="detail">
+  <img class="big" id="dimg" alt="">
+  <video class="big" id="dvid" playsinline muted loop style="display:none"></video>
+  <div class="top ui"><button class="pill" id="dshare">Share</button><button class="xbtn" id="dclose">&#10005;</button></div>
+  <div class="bot ui">
+    <div class="tip">Rotate to landscape. Tap the picture to hide or show controls.</div>
+    <div class="row"><button class="btn" id="dsave">Save to gallery</button><button class="btn bad" id="ddel">Delete</button></div>
+  </div>
+</div>
+
+<div id="help">
+  <div class="sheet">
+    <h3>How to see 3D</h3>
+    <ol>
+      <li>Rotate your phone to landscape.</li>
+      <li>Look far away, like at a mountain peak. Don't focus on the screen.</li>
+      <li>Hold the phone in front of you and slowly shift your focus closer to the screen.</li>
+      <li>At one point it clicks and the picture pops into 3D.</li>
+      <li>Guide dot: each picture has a white dot at the top. When the two dots merge into one, the pictures are locked together.</li>
+    </ol>
+    <h3>Camera 3D tips</h3>
+    <ol>
+      <li>Pick a point and keep it in the green circle.</li>
+      <li>Take shot 1, then slide the phone 5-8 cm sideways.</li>
+      <li>Match the faded ghost image and don't tilt or move up/down.</li>
+    </ol>
+    <h3>Video 3D tips</h3>
+    <ol>
+      <li>Film in landscape and slide the phone slowly and steadily sideways. No sideways movement means no 3D.</li>
+      <li>Tell the app which way you moved (right or left). If it looks inside out, switch it.</li>
+      <li>Use the 3D strength slider. Faster movement needs a smaller gap.</li>
+      <li>Tap Save video to render it. This takes as long as the video itself.</li>
+    </ol>
+    <h3>Stereogram tips</h3>
+    <ol>
+      <li>Type a message or pick a photo. The hidden shape is invisible in the normal view.</li>
+      <li>Two white dots are at the top. Look far away and let them merge into one dot, then keep your eyes relaxed. The hidden shape slowly appears.</li>
+      <li>If it looks like a hole instead of raised, switch Parallel / Cross-eye.</li>
+      <li>If it's hard to lock on, try the Pattern size slider.</li>
+      <li>For Hidden photo, use the Subject cutoff slider to grow or shrink the hidden subject.</li>
+    </ol>
+    <h3>Library</h3>
+    <ol>
+      <li>Every picture you make is kept in the Library tab automatically. Videos are kept once you save or share them.</li>
+      <li>Open one and tap Delete to remove it from the app and from your gallery.</li>
+    </ol>
+    <button class="btn" id="helpClose" style="width:100%">Got it</button>
+  </div>
+</div>
+
+<div id="toast"></div>
 
 <script>
-const COUNTRY_LIST = "ae:United Arab Emirates|ag:Antigua and Barbuda|ai:Anguilla|al:Albania|am:Armenia|ao:Angola|ar:Argentina|at:Austria|au:Australia|az:Azerbaijan|bb:Barbados|be:Belgium|bf:Burkina-Faso|bg:Bulgaria|bh:Bahrain|bj:Benin|bm:Bermuda|bn:Brunei Darussalam|bo:Bolivia|br:Brazil|bs:Bahamas|bt:Bhutan|bw:Botswana|by:Belarus|bz:Belize|ca:Canada|cg:Democratic Republic of the Congo|ch:Switzerland|cl:Chile|cn:China|co:Colombia|cr:Costa Rica|cv:Cape Verde|cy:Cyprus|cz:Czech Republic|de:Germany|dk:Denmark|dm:Dominica|do:Dominican Republic|dz:Algeria|ec:Ecuador|ee:Estonia|eg:Egypt|es:Spain|fi:Finland|fj:Fiji|fm:Federated States of Micronesia|fr:France|gb:United Kingdom|gd:Grenada|gh:Ghana|gm:Gambia|gr:Greece|gt:Guatemala|gw:Guinea Bissau|gy:Guyana|hk:Hong Kong|hn:Honduras|hr:Croatia|hu:Hungary|id:Indonesia|ie:Ireland|il:Israel|in:India|is:Iceland|it:Italy|jm:Jamaica|jo:Jordan|jp:Japan|ke:Kenya|kg:Krygyzstan|kh:Cambodia|kn:Saint Kitts and Nevis|kr:South Korea|kw:Kuwait|ky:Cayman Islands|kz:Kazakhstan|la:Laos|lb:Lebanon|lc:Saint Lucia|lk:Sri Lanka|lr:Liberia|lt:Lithuania|lu:Luxembourg|lv:Latvia|md:Moldova|mg:Madagascar|mk:Macedonia|ml:Mali|mn:Mongolia|mo:Macau|mr:Mauritania|ms:Montserrat|mt:Malta|mu:Mauritius|mw:Malawi|mx:Mexico|my:Malaysia|mz:Mozambique|na:Namibia|ne:Niger|ng:Nigeria|ni:Nicaragua|nl:Netherlands|np:Nepal|no:Norway|nz:New Zealand|om:Oman|pa:Panama|pe:Peru|pg:Papua New Guinea|ph:Philippines|pk:Pakistan|pl:Poland|pt:Portugal|pw:Palau|py:Paraguay|qa:Qatar|ro:Romania|ru:Russia|sa:Saudi Arabia|sb:Soloman Islands|sc:Seychelles|se:Sweden|sg:Singapore|si:Slovenia|sk:Slovakia|sl:Sierra Leone|sn:Senegal|sr:Suriname|st:Sao Tome e Principe|sv:El Salvador|sz:Swaziland|tc:Turks and Caicos Islands|td:Chad|th:Thailand|tj:Tajikistan|tm:Turkmenistan|tn:Tunisia|tr:Turkey|tt:Republic of Trinidad and Tobago|tw:Taiwan|tz:Tanzania|ua:Ukraine|ug:Uganda|us:United States of America|uy:Uruguay|uz:Uzbekistan|vc:Saint Vincent and the Grenadines|ve:Venezuela|vg:British Virgin Islands|vn:Vietnam|ye:Yemen|za:South Africa|zw:Zimbabwe";
+const $=id=>document.getElementById(id);
+const out=$('out');
+const V={parallel:true,render:null,kind:'cam',item:null,dirty:false};
+const D={item:null};
+const keepItem={photo:null,sg:null};
+const MODEL_URL='https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
+const MUXER_URL='https://cdn.jsdelivr.net/npm/mp4-muxer@5/+esm';
+const cap=()=>(window.Capacitor&&window.Capacitor.Plugins)||null;
+const FS=()=>{const c=cap();return c&&c.Filesystem};
+const GAL=()=>{const c=cap();return c&&c.StereoGallery};
+const SHARE=()=>{const c=cap();return c&&c.Share};
 
-function fillRegions() {
-  const sel = document.getElementById('region');
-  const all = COUNTRY_LIST.split('|').map(x => {
-    const i = x.indexOf(':');
-    return [x.slice(0, i), x.slice(i + 1)];
+/* ---------- guide dots ---------- */
+function dotAt(ctx,cx,y,r){
+  ctx.beginPath();ctx.arc(cx,y,r,0,Math.PI*2);
+  ctx.fillStyle='#fff';ctx.fill();
+  ctx.lineWidth=Math.max(1.5,r*0.4);ctx.strokeStyle='#000';ctx.stroke();
+}
+function dotMetrics(h){const r=Math.max(4,Math.round(h*0.008));return {r:r,y:Math.round(h*0.035)+r};}
+/* one dot at the top center of each eye image */
+function addPairDots(ctx,hw,h){
+  const m=dotMetrics(h);
+  dotAt(ctx,hw/2,m.y,m.r);
+  dotAt(ctx,hw*1.5,m.y,m.r);
+}
+
+/* ---------- toast ---------- */
+let toastT=null;
+function toast(m){
+  const t=$('toast');t.textContent=m;t.style.display='block';
+  clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2200);
+}
+
+/* ---------- tabs ---------- */
+function setTab(t){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+t));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  if(t==='cam')startCam();else{stopCam();resetCam();}
+  if(t==='lib')renderLib();
+}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+$('helpBtn').onclick=()=>$('help').style.display='flex';
+$('helpClose').onclick=()=>$('help').style.display='none';
+
+/* ---------- library storage ---------- */
+let lib=[];
+async function loadLib(){
+  const fs=FS();
+  if(!fs){lib=[];return;}
+  try{
+    const r=await fs.readFile({path:'library/index.json',directory:'DATA',encoding:'utf8'});
+    lib=JSON.parse(r.data)||[];
+  }catch(e){lib=[];}
+}
+async function saveIndex(){
+  const fs=FS();
+  if(!fs)return;
+  await fs.writeFile({path:'library/index.json',directory:'DATA',encoding:'utf8',data:JSON.stringify(lib),recursive:true});
+}
+async function fileUri(path,dir){
+  const r=await FS().getUri({path:path,directory:dir||'DATA'});
+  return r.uri;
+}
+async function itemSrc(it,which){
+  const p=(it.type==='video'&&which!=='file')?it.poster:it.file;
+  const u=await fileUri(p);
+  return window.Capacitor.convertFileSrc(u)+'?v='+(it.v||0);
+}
+async function renderLib(){
+  const grid=$('libGrid'),empty=$('libEmpty'),head=$('libHead');
+  if(!FS()){
+    grid.innerHTML='';empty.style.display='block';
+    empty.innerHTML='The library works in the installed app.';head.textContent='';
+    return;
+  }
+  empty.innerHTML='No pictures yet.<br>Every 3D picture you make shows up here automatically.';
+  empty.style.display=lib.length?'none':'block';
+  head.textContent=lib.length?(lib.length+(lib.length===1?' item':' items')):'';
+  const srcs=await Promise.all(lib.map(it=>itemSrc(it).catch(()=>'')));
+  grid.innerHTML='';
+  lib.forEach((it,i)=>{
+    const d=document.createElement('div');
+    d.className='thumb';
+    d.style.aspectRatio=String(it.ar||1.5);
+    d.style.backgroundImage='url("'+srcs[i]+'")';
+    if(it.single)d.style.backgroundSize='cover';
+    const tags=[];
+    if(it.type==='video')tags.push('\u25B6 Video');
+    if(it.single)tags.push('Stereogram');
+    if(it.gallery)tags.push('Saved');
+    if(tags.length){const b=document.createElement('i');b.textContent=tags.join(' \u00B7 ');d.appendChild(b);}
+    d.onclick=()=>openDetail(it,srcs[i]);
+    grid.appendChild(d);
   });
-  const first = [['us', 'United States of America'], ['gb', 'United Kingdom']];
-  const rest = all.filter(c => c[0] !== 'us' && c[0] !== 'gb').sort((a, b) => a[1].localeCompare(b[1]));
-  first.concat(rest).forEach(c => {
-    const o = document.createElement('option');
-    o.value = c[0];
-    o.textContent = c[1];
-    sel.appendChild(o);
+}
+function imgExt(){return V.kind==='sg'?'png':'jpg';}
+function imgB64(){
+  return (V.kind==='sg'?out.toDataURL('image/png'):out.toDataURL('image/jpeg',0.92)).split(',')[1];
+}
+
+/* remove an item everywhere (library files, gallery copy, index) */
+async function removeItem(it){
+  try{if(it.gallery&&GAL())await GAL().remove({uri:it.gallery});}catch(e){}
+  try{await FS().deleteFile({path:it.file,directory:'DATA'});}catch(e){}
+  if(it.poster){try{await FS().deleteFile({path:it.poster,directory:'DATA'});}catch(e){}}
+  lib=lib.filter(x=>x.id!==it.id);
+  if(keepItem.photo&&keepItem.photo.id===it.id)keepItem.photo=null;
+  if(keepItem.sg&&keepItem.sg.id===it.id)keepItem.sg=null;
+  try{await saveIndex();}catch(e){}
+}
+
+/* keep the current viewer picture in the library (once per picture, updated if changed) */
+async function commitLib(){
+  const fs=FS();
+  if(!fs)return V.item;
+  if(V.item&&!V.dirty)return V.item;
+  const now=Date.now();
+  const sg=V.kind==='sg';
+  if(!V.item){
+    V.item=sg
+      ?{id:now,type:'image',single:true,ext:'png',mime:'image/png',file:'library/s_'+now+'.png',ts:now,gallery:null,ar:out.width/out.height,v:now}
+      :{id:now,file:'library/s_'+now+'.jpg',ts:now,gallery:null,ar:out.width/2/out.height,v:now};
+    lib.unshift(V.item);
+  }
+  V.item.v=now;
+  V.item.ar=sg?out.width/out.height:out.width/2/out.height;
+  await fs.writeFile({path:V.item.file,directory:'DATA',data:imgB64(),recursive:true});
+  await saveIndex();
+  V.dirty=false;
+  if(V.kind!=='cam')keepItem[V.kind]=V.item;
+  return V.item;
+}
+
+/* ---------- gallery save + share helpers ---------- */
+async function toGallery(item,b64){
+  const g=GAL();
+  if(!g){
+    const a=document.createElement('a');
+    a.href='data:image/'+(imgExt()==='png'?'png':'jpeg')+';base64,'+b64;a.download='stereo3d_'+Date.now()+'.'+imgExt();a.click();
+    return;
+  }
+  if(item&&item.gallery){try{await g.remove({uri:item.gallery});}catch(e){}}
+  const r=await g.save({data:b64,name:'stereo3d_'+(item?item.id:Date.now())+'.jpg'});
+  if(item){item.gallery=r.uri;await saveIndex();}
+}
+/* videos and PNG stereograms: copy the stored file into the gallery */
+async function galleryFile(item){
+  const g=GAL();
+  if(item.gallery){try{await g.remove({uri:item.gallery});}catch(e){}}
+  const uri=await fileUri(item.file);
+  const r=await g.saveFile({uri:uri,name:'stereo3d_'+item.id+'.'+item.ext,mime:item.mime});
+  item.gallery=r.uri;
+  await saveIndex();
+}
+async function shareB64(b64,ext){
+  ext=ext||'jpg';
+  const fs=FS(),sh=SHARE();
+  if(fs&&sh){
+    const r=await fs.writeFile({path:'share_'+Date.now()+'.'+ext,data:b64,directory:'CACHE'});
+    await sh.share({title:'Stereo 3D',files:[r.uri]});
+  }else{
+    const a=document.createElement('a');
+    a.href='data:image/'+(ext==='png'?'png':'jpeg')+';base64,'+b64;a.download='stereo3d_'+Date.now()+'.'+ext;a.click();
+  }
+}
+async function shareVideoItem(it){
+  const fs=FS(),sh=SHARE();
+  const name='share_'+Date.now()+'.'+it.ext;
+  await fs.copy({from:it.file,directory:'DATA',to:name,toDirectory:'CACHE'});
+  const u=await fileUri(name,'CACHE');
+  await sh.share({title:'Stereo 3D',files:[u]});
+}
+function setBtn(btn,state){
+  const l=btn.dataset.l||'Save to gallery';
+  if(state==='ok'){btn.textContent='\u2713 Saved';btn.classList.add('ok');}
+  else if(state==='busy'){btn.textContent='Saving...';btn.classList.remove('ok');}
+  else{btn.textContent=l;btn.classList.remove('ok');}
+}
+
+/* ---------- camera ---------- */
+const cam=$('cam'),ghost=$('ghost'),txt=$('txt'),warn=$('warn');
+let stream=null,shots=[],moveRight=true,ori0=null,ori=null,sensorsOn=false;
+const HINT1='Pick a point in the room, keep it in the green circle, tap the button.';
+
+async function startCam(){
+  if(stream)return;
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},audio:false});
+    cam.srcObject=stream;
+    txt.textContent=HINT1;
+  }catch(e){txt.textContent='Camera access is needed: '+e.message}
+}
+function stopCam(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;cam.srcObject=null;}
+}
+function resetCam(){
+  shots=[];ori0=null;warn.textContent='';ghost.style.display='none';
+  txt.textContent=HINT1;
+}
+async function askSensors(){
+  if(sensorsOn)return;
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){
+      await DeviceOrientationEvent.requestPermission();
+    }
+  }catch(e){}
+  window.addEventListener('deviceorientation',e=>{
+    ori={b:e.beta||0,g:e.gamma||0};
+    if(ori0&&shots.length===1){
+      const db=Math.abs(ori.b-ori0.b),dg=Math.abs(ori.g-ori0.g);
+      warn.textContent=(db>3||dg>3)?'Tilt drift! Keep the phone level like shot 1':'';
+    }
   });
+  sensorsOn=true;
 }
-fillRegions();
-
-function show(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  btn.classList.add('active');
+function grab(){
+  const c=document.createElement('canvas');
+  const sc=Math.min(1,1600/cam.videoWidth);
+  c.width=Math.round(cam.videoWidth*sc);c.height=Math.round(cam.videoHeight*sc);
+  c.getContext('2d').drawImage(cam,0,0,c.width,c.height);
+  return c;
 }
-
-function msg(box, text) {
-  box.innerHTML = '';
-  const d = document.createElement('div');
-  d.className = 'msg';
-  d.textContent = text;
-  box.appendChild(d);
-}
-
-async function getJson(url) {
-  const r = await fetch(url);
-  return await r.json();
-}
-
-// Opens a web page inside the app
-function openInApp(url) {
-  try {
-    if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Browser) {
-      Capacitor.Plugins.Browser.open({ url: url });
-      return;
-    }
-  } catch (e) {}
-  window.open(url, '_blank');
-}
-
-function appleUrl(u) {
-  try {
-    const x = new URL(u);
-    x.hostname = 'music.apple.com';
-    x.searchParams.delete('uo');
-    return x.toString();
-  } catch (e) {
-    return u;
+$('dir').onclick=()=>{
+  if(shots.length)return;
+  moveRight=!moveRight;
+  $('dir').innerHTML=moveRight?'Move RIGHT &rarr;':'&larr; Move LEFT';
+};
+$('shutter').onclick=async()=>{
+  if(!cam.videoWidth)return;
+  if(!shots.length){
+    await askSensors();
+    shots.push(grab());
+    ori0=ori?{...ori}:null;
+    ghost.src=shots[0].toDataURL('image/jpeg',.7);
+    ghost.style.display='block';
+    txt.textContent='Now slide the phone '+(moveRight?'RIGHT':'LEFT')+' about 5-8 cm. Keep the point in the circle and match the ghost image.';
+  }else{
+    shots.push(grab());
+    ghost.style.display='none';
+    openViewer(renderCam,'cam');
   }
+};
+function renderCam(){
+  const [a,b]=shots;
+  let L=moveRight?a:b,R=moveRight?b:a;
+  if(!V.parallel){[L,R]=[R,L];}
+  out.width=L.width*2;out.height=L.height;
+  const x=out.getContext('2d');
+  x.drawImage(L,0,0);x.drawImage(R,L.width,0);
+  addPairDots(x,L.width,L.height);
 }
 
-/* ---------- SONGS ---------- */
-async function searchSongs() {
-  const q = document.getElementById('songQ').value.trim();
-  const box = document.getElementById('songOut');
-  if (!q) return;
-  msg(box, 'Searching...');
-  try {
-    const data = await getJson('https://itunes.apple.com/search?media=music&entity=song&limit=25&term=' + encodeURIComponent(q));
-    if (!data.results.length) return msg(box, 'Nothing found');
-    box.innerHTML = '';
-    data.results.forEach(s => {
-      const el = document.createElement('div');
-      el.className = 'row';
+/* ---------- result viewer (photo + camera + stereogram) ---------- */
+function setSeg(){
+  $('mPar').classList.toggle('on',V.parallel);
+  $('mCross').classList.toggle('on',!V.parallel);
+}
+function openViewer(fn,kind){
+  V.render=fn;V.kind=kind;V.dirty=true;
+  V.item=kind==='cam'?null:keepItem[kind];
+  $('strRow').style.display=kind==='photo'?'block':'none';
+  $('sgRow').style.display=kind==='sg'?'flex':'none';
+  $('cutRow').style.display=(kind==='sg'&&SG.mode==='photo')?'block':'none';
+  $('vtip').textContent=kind==='sg'
+    ?'Rotate to landscape. Merge the two top dots into one, then relax your eyes. Tap the picture to hide controls.'
+    :'Rotate to landscape. Tap the picture to hide or show controls.';
+  $('viewer').classList.remove('hide');
+  $('viewer').style.display='block';
+  setBtn($('save'),'idle');
+  setSeg();fn();
+}
+async function closeViewer(){
+  try{await commitLib();}catch(e){}
+  $('viewer').style.display='none';
+  if(V.kind==='cam')resetCam();
+  renderLib();
+  toast('Kept in your Library');
+}
+function changed(){
+  V.dirty=true;
+  setBtn($('save'),'idle');
+  V.render&&V.render();
+}
+$('vclose').onclick=closeViewer;
+$('retake').onclick=closeViewer;
+out.onclick=()=>$('viewer').classList.toggle('hide');
+$('mPar').onclick=()=>{V.parallel=true;setSeg();changed()};
+$('mCross').onclick=()=>{V.parallel=false;setSeg();changed()};
+$('str').oninput=()=>{$('sv').textContent=$('str').value;changed()};
 
-      const img = document.createElement('img');
-      img.src = s.artworkUrl100;
-
-      const info = document.createElement('div');
-      info.className = 'info';
-      const t = document.createElement('div');
-      t.className = 't';
-      t.textContent = s.trackName;
-      const sub = document.createElement('div');
-      sub.className = 's';
-      sub.textContent = s.artistName + ' • ' + s.collectionName;
-      info.appendChild(t);
-      info.appendChild(sub);
-
-      el.appendChild(img);
-      el.appendChild(info);
-
-      if (s.previewUrl) {
-        const b = document.createElement('button');
-        b.className = 'pv';
-        b.textContent = 'Preview';
-        b.onclick = (ev) => {
-          ev.stopPropagation();
-          if (window._a) window._a.pause();
-          window._a = new Audio(s.previewUrl);
-          window._a.play();
-        };
-        el.appendChild(b);
-      }
-
-      el.onclick = () => openInApp(appleUrl(s.trackViewUrl || s.collectionViewUrl));
-      box.appendChild(el);
-    });
-  } catch (e) {
-    msg(box, 'Something went wrong, try again');
+$('save').onclick=async()=>{
+  const btn=$('save');
+  setBtn(btn,'busy');
+  try{
+    const item=await commitLib();
+    if(item&&item.single)await galleryFile(item);
+    else await toGallery(item,imgB64());
+    setBtn(btn,'ok');
+    toast('Saved to gallery');
+  }catch(e){
+    setBtn(btn,'idle');
+    toast('Save failed: '+(e&&e.message?e.message:e));
   }
-}
+};
+$('vshare').onclick=async()=>{
+  try{
+    await commitLib();
+    await shareB64(imgB64(),imgExt());
+  }catch(e){}
+};
 
-/* ---------- COVERS (same method as the real iTunes Artwork Finder) ---------- */
-function buildSearchUrl(query, entity, country) {
-  let ent = entity;
-  let shortFilm = false;
-  if (ent === 'shortFilm') {
-    shortFilm = true;
-    ent = 'movie';
+/* ---------- Video 3D ---------- */
+const vid=$('vid'),vout=$('vout'),vctx=vout.getContext('2d');
+const VV={gen:0,on:false,delay:100,camRight:true,parallel:true,ew:0,eh:0,url:null,
+  item:null,blob:null,ext:'mp4',rendered:false,dirty:true,busy:false,cancel:null,onFrame:null};
+const RB=32;let ring=[],ringW=0;
+
+function ringInit(){
+  ring=[];
+  for(let i=0;i<RB;i++){
+    const c=document.createElement('canvas');c.width=VV.ew;c.height=VV.eh;
+    ring.push({c:c,x:c.getContext('2d'),t:-1});
   }
-  let url = 'https://itunes.apple.com/search?term=' + encodeURIComponent(query) + '&country=' + country + '&entity=' + ent;
-  if (shortFilm) url += '&attribute=shortFilmTerm';
-  if (entity === 'id' || entity === 'idAlbum') {
-    url = 'https://itunes.apple.com/lookup?id=' + encodeURIComponent(query) + '&country=' + country;
+  ringW=0;
+}
+function ringClear(){ring.forEach(s=>s.t=-1);ringW=0;}
+function ringPush(t){
+  if(!ring.length||!VV.ew)return;
+  const s=ring[ringW%RB];
+  s.x.drawImage(vid,0,0,VV.ew,VV.eh);
+  s.t=t;ringW++;
+}
+function ringGet(t){
+  let best=null,bd=1e9;
+  for(const s of ring){
+    if(s.t<0)continue;
+    const d=Math.abs(s.t-t);
+    if(d<bd){bd=d;best=s;}
   }
-  return url + '&limit=25';
+  return best;
 }
-
-function processResults(json, entity) {
-  const out = [];
-  (json.results || []).forEach(r => {
-    if (entity === 'id' && r.kind !== 'feature-movie' && r.wrapperType !== 'collection') return;
-    if (entity === 'idAlbum' && r.collectionType !== 'Album') return;
-    if (!r.artworkUrl100 && !r.artworkUrl512) return;
-
-    const art = r.artworkUrl100 || r.artworkUrl512;
-    const d = {};
-    d.url = art.replace('100x100', '600x600');
-
-    // High resolution link
-    let hires = art.replace('100x100bb', '100000x100000-999');
-    try {
-      hires = 'https://is5-ssl.mzstatic.com' + new URL(hires).pathname;
-    } catch (e) {}
-    d.hires = hires;
-
-    // Uncompressed (albums only) - same link the real website gives now
-    if (entity === 'album' || entity === 'idAlbum') {
-      const parts = hires.split('/image/thumb/');
-      if (parts.length === 2) {
-        const segs = parts[1].split('/');
-        segs.pop();
-        d.uncompressed = 'https://is1-ssl.mzstatic.com/image/thumb/' + segs.join('/') + '/3000x3000bb-100.jpg';
-      }
-    }
-
-    d.title = entity === 'movie' ? r.trackName : r.collectionName;
-    switch (entity) {
-      case 'musicVideo':
-        d.title = r.trackName + ' (by ' + r.artistName + ')';
-        d.url = hires;
-        break;
-      case 'tvSeason':
-        d.title = r.collectionName;
-        break;
-      case 'movie':
-      case 'id':
-      case 'shortFilm':
-        d.title = r.trackName || r.collectionName;
-        break;
-      case 'ebook':
-        d.title = r.trackName + ' (by ' + r.artistName + ')';
-        break;
-      case 'album':
-      case 'idAlbum':
-      case 'audiobook':
-      case 'podcast':
-        d.title = r.collectionName + ' (by ' + r.artistName + ')';
-        break;
-      case 'software':
-      case 'iPadSoftware':
-      case 'macSoftware':
-        d.url = (r.artworkUrl512 || art).replace('512x512bb', '1024x1024bb');
-        d.appstore = r.trackViewUrl;
-        d.title = r.trackName;
-        break;
-    }
-    if (d.title) out.push(d);
-  });
-  return out;
+function drawStereo(){
+  if(!ringW)return;
+  const cur=ring[(ringW-1)%RB];
+  if(cur.t<0)return;
+  const old=ringGet(cur.t-VV.delay/1000)||cur;
+  /* older frame = left eye if the camera moved right */
+  let L=VV.camRight?old:cur,R=VV.camRight?cur:old;
+  if(!VV.parallel){const t=L;L=R;R=t;}
+  vctx.drawImage(L.c,0,0);
+  vctx.drawImage(R.c,VV.ew,0);
+  addPairDots(vctx,VV.ew,VV.eh);
 }
-
-function makeLinkButton(box, label, sub, url, hi) {
-  const b = document.createElement('button');
-  b.className = 'dl' + (hi ? ' hi' : '');
-  b.innerHTML = label + '<small>' + sub + '</small>';
-  b.onclick = () => openInApp(url);
-  box.appendChild(b);
-}
-
-function makeCopyButton(box, url) {
-  const c = document.createElement('button');
-  c.className = 'cp';
-  c.textContent = 'Copy uncompressed link';
-  c.onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      c.textContent = 'Copied';
-    } catch (e) {
-      c.textContent = 'Could not copy';
-    }
-    setTimeout(() => { c.textContent = 'Copy uncompressed link'; }, 1800);
+function startVLoop(){
+  stopVLoop();
+  const gen=++VV.gen;VV.on=true;
+  const useRv='requestVideoFrameCallback' in HTMLVideoElement.prototype;
+  if(useRv){
+    const cb=(now,meta)=>{
+      if(gen!==VV.gen)return;
+      ringPush(meta.mediaTime);
+      if(VV.onFrame){drawStereo();VV.onFrame(meta);}
+      vid.requestVideoFrameCallback(cb);
+    };
+    vid.requestVideoFrameCallback(cb);
+  }
+  let lastT=-1;
+  const draw=()=>{
+    if(gen!==VV.gen)return;
+    if(!useRv&&vid.readyState>=2&&vid.currentTime!==lastT){lastT=vid.currentTime;ringPush(lastT);}
+    drawStereo();
+    requestAnimationFrame(draw);
   };
-  box.appendChild(c);
+  draw();
+}
+function stopVLoop(){VV.gen++;VV.on=false;}
+
+function openVideo(f){
+  if(!f)return;
+  if(VV.url){try{URL.revokeObjectURL(VV.url)}catch(e){}}
+  VV.url=URL.createObjectURL(f);
+  VV.item=null;VV.blob=null;VV.rendered=false;VV.dirty=true;VV.busy=false;VV.onFrame=null;
+  vid.muted=true;vid.loop=true;
+  vid.onloadedmetadata=()=>{
+    const vw=vid.videoWidth,vh=vid.videoHeight;
+    if(!vw||!vh){toast('Could not read this video');return;}
+    const sc=Math.min(1,800/Math.max(vw,vh));
+    VV.ew=Math.max(2,Math.round(vw*sc/2)*2);
+    VV.eh=Math.max(2,Math.round(vh*sc/2)*2);
+    vout.width=VV.ew*2;vout.height=VV.eh;
+    ringInit();
+    $('vviewer').classList.remove('hide');
+    $('vviewer').style.display='block';
+    $('vprog').style.display='none';
+    setBtn($('vsave'),'idle');
+    $('vplay').textContent='Pause';
+    vid.play().catch(()=>{});
+    startVLoop();
+  };
+  vid.onerror=()=>toast('Could not open this video');
+  vid.src=VV.url;
+}
+$('vfile').onchange=e=>{const f=e.target.files[0];e.target.value='';openVideo(f);};
+$('vrec').onchange=e=>{const f=e.target.files[0];e.target.value='';openVideo(f);};
+
+function vChanged(){
+  VV.dirty=true;
+  setBtn($('vsave'),'idle');
+}
+function vSegs(){
+  $('dRight').classList.toggle('on',VV.camRight);
+  $('dLeft').classList.toggle('on',!VV.camRight);
+  $('vPar').classList.toggle('on',VV.parallel);
+  $('vCross').classList.toggle('on',!VV.parallel);
+}
+$('dRight').onclick=()=>{VV.camRight=true;vSegs();vChanged()};
+$('dLeft').onclick=()=>{VV.camRight=false;vSegs();vChanged()};
+$('vPar').onclick=()=>{VV.parallel=true;vSegs();vChanged()};
+$('vCross').onclick=()=>{VV.parallel=false;vSegs();vChanged()};
+$('vdelay').oninput=()=>{VV.delay=+$('vdelay').value;$('vdv').textContent=VV.delay;vChanged()};
+$('vplay').onclick=()=>{
+  if(vid.paused){vid.play().catch(()=>{});$('vplay').textContent='Pause';}
+  else{vid.pause();$('vplay').textContent='Play';}
+};
+vout.onclick=()=>{if(!VV.busy)$('vviewer').classList.toggle('hide');};
+
+function pickMime(){
+  const c=[
+    ['video/mp4;codecs=avc1','mp4','video/mp4'],
+    ['video/mp4','mp4','video/mp4'],
+    ['video/webm;codecs=vp8','webm','video/webm'],
+    ['video/webm;codecs=vp9','webm','video/webm'],
+    ['video/webm','webm','video/webm']
+  ];
+  if(window.MediaRecorder){
+    for(const x of c){if(MediaRecorder.isTypeSupported(x[0]))return {type:x[0],ext:x[1],base:x[2]};}
+  }
+  return {type:'',ext:'webm',base:'video/webm'};
+}
+function blobB64(b){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result.split(',')[1]);
+    r.onerror=rej;
+    r.readAsDataURL(b);
+  });
+}
+async function writeBlob(path,blob){
+  const fs=FS(),CH=3*1024*1024;
+  let first=true;
+  for(let o=0;o<blob.size;o+=CH){
+    const b64=await blobB64(blob.slice(o,o+CH));
+    if(first){await fs.writeFile({path:path,directory:'DATA',data:b64,recursive:true});first=false;}
+    else{await fs.appendFile({path:path,directory:'DATA',data:b64});}
+  }
+}
+function showProg(on,p){
+  $('vprog').style.display=on?'flex':'none';
+  if(on){
+    const v=Math.max(0,Math.min(100,Math.round((p||0)*100)));
+    $('vptxt').textContent='Rendering 3D video... '+v+'%';
+    $('vpfill').style.width=v+'%';
+  }
+}
+function seekZero(){
+  return new Promise(res=>{
+    if(vid.currentTime<0.02){res();return;}
+    const h=()=>{vid.removeEventListener('seeked',h);res();};
+    vid.addEventListener('seeked',h);
+    setTimeout(h,800);
+    vid.currentTime=0;
+  });
+}
+function saveBlobWeb(blob,ext){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='stereo3d_'+Date.now()+'.'+ext;a.click();
 }
 
-async function searchCovers() {
-  const q = document.getElementById('coverQ').value.trim();
-  const country = document.getElementById('region').value;
-  const entity = document.getElementById('entity').value;
-  const box = document.getElementById('coverOut');
-  if (!q) return;
-  msg(box, 'Searching...');
-  try {
-    const json = await getJson(buildSearchUrl(q, entity, country));
-    const list = processResults(json, entity);
-    if (!list.length) return msg(box, 'No results found.');
-    box.innerHTML = '';
+/* proper MP4 encoder (WebCodecs + muxer): correct duration, plays fully everywhere */
+async function setupWC(){
+  if(!(window.VideoEncoder&&window.VideoFrame&&('requestVideoFrameCallback' in HTMLVideoElement.prototype)))return null;
+  let M;
+  try{M=await import(MUXER_URL);}catch(e){return null;}
+  const w=VV.ew*2,h=VV.eh;
+  let cfg=null;
+  for(const codec of ['avc1.640028','avc1.4d0028','avc1.42001f']){
+    const c={codec:codec,width:w,height:h,bitrate:6000000,framerate:30};
+    try{const s=await VideoEncoder.isConfigSupported(c);if(s&&s.supported){cfg=c;break;}}catch(e){}
+  }
+  if(!cfg)return null;
+  const target=new M.ArrayBufferTarget();
+  const muxer=new M.Muxer({target:target,video:{codec:'avc',width:w,height:h},fastStart:'in-memory'});
+  let err=null,n=0,t0=null,lastTs=-1;
+  const enc=new VideoEncoder({output:(c,m)=>{try{muxer.addVideoChunk(c,m);}catch(e){err=e;}},error:e=>{err=e;}});
+  enc.configure(cfg);
+  VV.onFrame=meta=>{
+    if(err)return;
+    if(t0===null)t0=meta.mediaTime;
+    const ts=Math.max(0,Math.round((meta.mediaTime-t0)*1e6));
+    if(ts<=lastTs)return;
+    lastTs=ts;
+    const f=new VideoFrame(vout,{timestamp:ts});
+    try{enc.encode(f,{keyFrame:n%60===0});n++;}catch(e){err=e;}
+    f.close();
+  };
+  return {
+    async finish(){
+      VV.onFrame=null;
+      await enc.flush();
+      if(err)throw err;
+      if(!n)throw new Error('no frames captured');
+      muxer.finalize();
+      try{enc.close();}catch(e){}
+      return new Blob([target.buffer],{type:'video/mp4'});
+    },
+    close(){VV.onFrame=null;try{enc.close();}catch(e){}}
+  };
+}
 
-    const tip = document.createElement('div');
-    tip.className = 'tip';
-    tip.textContent = 'Tap a button to open the image, then press and hold it to download. If the item is not on iTunes, this tool will not find it.';
-    box.appendChild(tip);
+/* plays the clip once from the start while capturing the 3D canvas */
+async function renderVideo(){
+  if(VV.rendered&&!VV.dirty)return VV.item||{web:true};
+  if(VV.busy)return null;
+  const canWC=!!(window.VideoEncoder&&window.VideoFrame);
+  if(!canWC&&(!window.MediaRecorder||!vout.captureStream)){toast('Video rendering is not supported here');return null;}
+  VV.busy=true;
+  showProg(true,0);
+  let cancelled=false,poster=null,prog=null,wc=null,rec=null,blob=null;
+  let ext='mp4',mime='video/mp4';
+  const chunks=[];
+  try{
+    const old=VV.item;
+    vid.pause();vid.loop=false;
+    await seekZero();
+    ringClear();
+    wc=await setupWC();
+    if(!wc){
+      const mt=pickMime();
+      ext=mt.ext;mime=mt.base;
+      const stream=vout.captureStream(30);
+      const opts={videoBitsPerSecond:8000000};
+      if(mt.type)opts.mimeType=mt.type;
+      rec=new MediaRecorder(stream,opts);
+      rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+    }
+    const finished=new Promise(res=>{
+      vid.onended=()=>res();
+      VV.cancel=()=>{cancelled=true;res();};
+    });
+    if(rec)rec.start(500);
+    await vid.play();
+    prog=setInterval(()=>{
+      const d=vid.duration||0;
+      showProg(true,d?vid.currentTime/d:0);
+      if(!poster&&vid.currentTime>0.2){poster=vout.toDataURL('image/jpeg',0.8).split(',')[1];}
+    },200);
+    await finished;
+    clearInterval(prog);prog=null;
+    vid.onended=null;VV.cancel=null;
+    if(!poster)poster=vout.toDataURL('image/jpeg',0.8).split(',')[1];
+    if(wc){
+      if(cancelled){wc.close();}
+      else{showProg(true,1);blob=await wc.finish();}
+    }
+    if(rec){
+      await new Promise(r=>{rec.onstop=r;rec.stop();});
+      if(!cancelled)blob=new Blob(chunks,{type:mime});
+    }
+    /* back to looping preview */
+    vid.loop=true;
+    await seekZero();
+    ringClear();
+    vid.play().catch(()=>{});
+    $('vplay').textContent='Pause';
+    if(cancelled||!blob){VV.busy=false;showProg(false);return null;}
+    VV.blob=blob;VV.ext=ext;
+    let result={web:true};
+    if(FS()){
+      if(old){await removeItem(old);}
+      const now=Date.now();
+      const it={id:now,type:'video',file:'library/v_'+now+'.'+ext,poster:'library/v_'+now+'.jpg',
+        ext:ext,mime:mime,ts:now,gallery:null,ar:VV.ew/VV.eh,v:now};
+      await writeBlob(it.file,blob);
+      await FS().writeFile({path:it.poster,directory:'DATA',data:poster,recursive:true});
+      lib.unshift(it);
+      await saveIndex();
+      VV.item=it;result=it;
+    }
+    VV.rendered=true;VV.dirty=false;
+    VV.busy=false;showProg(false);
+    return result;
+  }catch(e){
+    if(prog)clearInterval(prog);
+    if(wc)wc.close();
+    VV.onFrame=null;
+    try{if(rec&&rec.state!=='inactive')rec.stop();}catch(x){}
+    vid.onended=null;VV.cancel=null;vid.loop=true;
+    VV.busy=false;showProg(false);
+    vid.play().catch(()=>{});
+    toast('Render failed: '+(e&&e.message?e.message:e));
+    return null;
+  }
+}
+$('vpcancel').onclick=()=>{if(VV.cancel)VV.cancel();};
 
-    const isApp = entity === 'software' || entity === 'iPadSoftware' || entity === 'macSoftware';
+$('vsave').onclick=async()=>{
+  const btn=$('vsave');
+  if(VV.busy)return;
+  try{
+    const it=await renderVideo();
+    if(!it)return;
+    setBtn(btn,'busy');
+    if(it.web){
+      saveBlobWeb(VV.blob,VV.ext);
+    }else{
+      await galleryFile(it);
+    }
+    setBtn(btn,'ok');
+    toast('Saved to gallery');
+    renderLib();
+  }catch(e){
+    setBtn(btn,'idle');
+    toast('Save failed: '+(e&&e.message?e.message:e));
+  }
+};
+$('vvshare').onclick=async()=>{
+  if(VV.busy)return;
+  try{
+    const it=await renderVideo();
+    if(!it)return;
+    if(it.web){saveBlobWeb(VV.blob,VV.ext);}
+    else{await shareVideoItem(it);}
+  }catch(e){}
+};
+function closeVideoView(){
+  if(VV.busy)return;
+  if(!VV.rendered&&!confirm('Close without saving this video? Tap Save video first if you want to keep it.'))return;
+  stopVLoop();
+  vid.pause();
+  vid.removeAttribute('src');
+  vid.load();
+  if(VV.url){try{URL.revokeObjectURL(VV.url)}catch(e){}VV.url=null;}
+  $('vviewer').style.display='none';
+  const kept=VV.rendered;
+  VV.item=null;VV.blob=null;VV.rendered=false;
+  renderLib();
+  if(kept)toast('Kept in your Library');
+}
+$('vvclose').onclick=closeVideoView;
+$('vdone').onclick=closeVideoView;
 
-    list.forEach(d => {
-      const card = document.createElement('div');
-      card.className = 'cover';
+/* ---------- library detail ---------- */
+async function openDetail(it,src){
+  D.item=it;
+  const isV=it.type==='video';
+  $('dimg').style.display=isV?'none':'block';
+  $('dvid').style.display=isV?'block':'none';
+  $('detail').classList.remove('hide');
+  $('detail').style.display='block';
+  setBtn($('dsave'),it.gallery?'ok':'idle');
+  if(isV){
+    try{
+      $('dvid').src=await itemSrc(it,'file');
+      $('dvid').play().catch(()=>{});
+    }catch(e){}
+  }else{
+    $('dimg').src=src;
+  }
+}
+function closeDetail(){
+  $('detail').style.display='none';
+  $('dimg').src='';
+  const dv=$('dvid');
+  dv.pause();dv.removeAttribute('src');dv.load();
+  D.item=null;
+}
+$('dclose').onclick=closeDetail;
+$('dimg').onclick=()=>$('detail').classList.toggle('hide');
+$('dvid').onclick=()=>$('detail').classList.toggle('hide');
+async function detailB64(){
+  const r=await FS().readFile({path:D.item.file,directory:'DATA'});
+  return r.data;
+}
+$('dshare').onclick=async()=>{
+  const it=D.item;
+  if(!it)return;
+  try{
+    if(it.type==='video')await shareVideoItem(it);
+    else await shareB64(await detailB64(),it.ext||'jpg');
+  }catch(e){}
+};
+$('dsave').onclick=async()=>{
+  const btn=$('dsave'),it=D.item;
+  if(!it)return;
+  setBtn(btn,'busy');
+  try{
+    if(it.type==='video'||it.single)await galleryFile(it);
+    else await toGallery(it,await detailB64());
+    setBtn(btn,'ok');
+    toast('Saved to gallery');
+    renderLib();
+  }catch(e){
+    setBtn(btn,'idle');
+    toast('Save failed: '+(e&&e.message?e.message:e));
+  }
+};
+$('ddel').onclick=async()=>{
+  const it=D.item;
+  if(!it)return;
+  if(!confirm('Delete this from the app and from your gallery?'))return;
+  await removeItem(it);
+  closeDetail();
+  renderLib();
+  toast('Deleted');
+};
 
-      const img = document.createElement('img');
-      img.src = d.url;
-      img.loading = 'lazy';
+/* ---------- AI depth (shared by Photo 3D and Stereogram) ---------- */
+let estimator=null,srcData=null,depth=null,W=0,H=0;
+const pstatus=$('pstatus'),pbar=$('pbar'),pfill=$('pfill');
+const PUI={status:pstatus,bar:pbar,fill:pfill};
+const SUI={status:$('sgstatus'),bar:$('sgbar'),fill:$('sgfill')};
+async function getEstimator(ui){
+  if(estimator)return estimator;
+  ui.status.textContent='Loading AI depth model...';
+  const {pipeline}=await import(MODEL_URL);
+  estimator=await pipeline('depth-estimation','onnx-community/depth-anything-v2-small',{
+    progress_callback:p=>{
+      if(p.status==='progress'){
+        const v=Math.round(p.progress||0);
+        ui.status.textContent='Downloading AI model: '+v+'%';
+        ui.fill.style.width=v+'%';
+      }
+    }
+  });
+  return estimator;
+}
+async function estimateDepth(f,ui){
+  ui.bar.style.display='block';ui.fill.style.width='5%';
+  ui.status.textContent='Reading photo...';
+  const bmp=await createImageBitmap(f);
+  const sc=Math.min(1,900/bmp.width);
+  const w=Math.round(bmp.width*sc),h=Math.round(bmp.height*sc);
+  const c=document.createElement('canvas');
+  c.width=w;c.height=h;
+  const cx=c.getContext('2d');
+  cx.drawImage(bmp,0,0,w,h);
+  const sd=cx.getImageData(0,0,w,h);
+  const est=await getEstimator(ui);
+  ui.fill.style.width='100%';
+  ui.status.textContent='Working out depth... (10-30 sec)';
+  const res=await est(c.toDataURL('image/jpeg',0.9));
+  const d=res.depth;
+  const ch=d.channels||1;
+  const dep=new Uint8Array(w*h);
+  for(let y=0;y<h;y++){
+    const sy=Math.min(d.height-1,Math.floor(y*d.height/h));
+    for(let x=0;x<w;x++){
+      const sx=Math.min(d.width-1,Math.floor(x*d.width/w));
+      dep[y*w+x]=d.data[(sy*d.width+sx)*ch];
+    }
+  }
+  ui.bar.style.display='none';
+  return {W:w,H:h,srcData:sd,depth:dep};
+}
 
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.textContent = d.title;
+/* ---------- photo to 3D ---------- */
+$('file').onchange=async e=>{
+  const f=e.target.files[0];
+  e.target.value='';
+  if(!f)return;
+  try{
+    const r=await estimateDepth(f,PUI);
+    srcData=r.srcData;depth=r.depth;W=r.W;H=r.H;
+    pstatus.textContent='Done!';
+    $('again').style.display='inline-block';
+    keepItem.photo=null;
+    openViewer(renderPhoto,'photo');
+  }catch(err){
+    pbar.style.display='none';
+    pstatus.textContent='Error: '+err.message+' (first run needs internet to download the AI model)';
+  }
+};
+$('again').onclick=()=>openViewer(renderPhoto,'photo');
+function renderPhoto(){
+  if(!srcData||!depth)return;
+  const s=(+$('str').value/100)*W;
+  const sign=V.parallel?1:-1;
+  out.width=W*2;out.height=H;
+  const ctx=out.getContext('2d');
+  const img=ctx.createImageData(W*2,H);
+  const sd=srcData.data,od=img.data;
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      const disp=(depth[y*W+x]/255-0.5)*s*sign;
+      let xl=Math.round(x-disp),xr=Math.round(x+disp);
+      if(xl<0)xl=0;if(xl>W-1)xl=W-1;
+      if(xr<0)xr=0;if(xr>W-1)xr=W-1;
+      const li=(y*W+xl)*4,ri=(y*W+xr)*4;
+      const lo=(y*W*2+x)*4,ro=(y*W*2+W+x)*4;
+      od[lo]=sd[li];od[lo+1]=sd[li+1];od[lo+2]=sd[li+2];od[lo+3]=255;
+      od[ro]=sd[ri];od[ro+1]=sd[ri+1];od[ro+2]=sd[ri+2];od[ro+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+  addPairDots(ctx,W,H);
+}
 
-      card.appendChild(img);
-      card.appendChild(name);
+/* ---------- Stereogram maker ---------- */
+const SG={mode:'text',text:'',photo:null,photoId:0,zc:null,pal:0,luts:{}};
+const PALS=[
+  {n:'Rainbow',h0:0,sp:360},
+  {n:'Ocean',h0:165,sp:100},
+  {n:'Fire',h0:0,sp:60},
+  {n:'Forest',h0:70,sp:110}
+];
+(function(){
+  const seg=$('palSeg');
+  PALS.forEach((p,i)=>{
+    const b=document.createElement('button');
+    b.textContent=p.n;b.dataset.i=i;
+    if(i===SG.pal)b.className='on';
+    b.onclick=()=>{
+      SG.pal=i;
+      seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',+x.dataset.i===i));
+      changed();
+    };
+    seg.appendChild(b);
+  });
+})();
 
-      if (isApp) {
-        makeLinkButton(card, 'App icon', '1024 × 1024', d.url, true);
-        if (d.appstore) makeLinkButton(card, 'View on the App Store', 'Opens the store page', d.appstore, false);
-      } else {
-        makeLinkButton(card, 'Standard Resolution', '600 × 600', d.url, false);
-        if (d.uncompressed) {
-          makeLinkButton(card, 'Uncompressed High Resolution', 'Full quality, 3000 × 3000 (large file)', d.uncompressed, true);
-          makeCopyButton(card, d.uncompressed);
-        } else {
-          makeLinkButton(card, 'High Resolution', 'Largest version available', d.hires, true);
+function setSgMode(m){
+  SG.mode=m;
+  $('sgModeT').classList.toggle('on',m==='text');
+  $('sgModeP').classList.toggle('on',m==='photo');
+  $('sgTextBox').style.display=m==='text'?'flex':'none';
+  $('sgPhotoBox').style.display=m==='photo'?'flex':'none';
+}
+$('sgModeT').onclick=()=>setSgMode('text');
+$('sgModeP').onclick=()=>setSgMode('photo');
+$('sgcreate').onclick=()=>{
+  const t=$('sgtext').value.replace(/\r/g,'');
+  if(!t.trim()){toast('Type a message first');return;}
+  SG.text=t.trim();SG.mode='text';
+  keepItem.sg=null;
+  openViewer(renderSG,'sg');
+};
+$('sgfile').onchange=async e=>{
+  const f=e.target.files[0];
+  e.target.value='';
+  if(!f)return;
+  try{
+    const r=await estimateDepth(f,SUI);
+    SG.photo={W:r.W,H:r.H,depth:r.depth};
+    SG.photoId++;SG.mode='photo';
+    $('sgcut').value=0;$('sgcv').textContent='0';
+    SUI.status.textContent='Done!';
+    keepItem.sg=null;
+    openViewer(renderSG,'sg');
+  }catch(err){
+    SUI.bar.style.display='none';
+    SUI.status.textContent='Error: '+err.message+' (first run needs internet to download the AI model)';
+  }
+};
+
+let sgT=null;
+function sgSlide(){
+  V.dirty=true;
+  setBtn($('save'),'idle');
+  clearTimeout(sgT);
+  sgT=setTimeout(()=>{V.render&&V.render();},90);
+}
+$('sgdep').oninput=()=>{$('sgdv').textContent=$('sgdep').value;sgSlide()};
+$('sgper').oninput=()=>{$('sgpv').textContent=$('sgper').value;sgSlide()};
+$('sgcut').oninput=()=>{$('sgcv').textContent=$('sgcut').value;sgSlide()};
+
+function grayToZ(c){
+  const w=c.width,h=c.height;
+  const d=c.getContext('2d').getImageData(0,0,w,h).data;
+  const z=new Float32Array(w*h);
+  for(let i=0;i<z.length;i++)z[i]=d[i*4]/255;
+  return z;
+}
+function softCopy(c,px){
+  const c2=document.createElement('canvas');c2.width=c.width;c2.height=c.height;
+  const x=c2.getContext('2d');
+  try{x.filter='blur('+px+'px)';}catch(e){}
+  x.drawImage(c,0,0);
+  return c2;
+}
+
+/* hidden text -> depth map (text near = 1, background far = 0) */
+function textZ(W,H){
+  const c=document.createElement('canvas');c.width=W;c.height=H;
+  const x=c.getContext('2d');
+  x.fillStyle='#000';x.fillRect(0,0,W,H);
+  const fam='"Arial Black",Roboto,system-ui,sans-serif';
+  const lh=1.15;
+  function fit(lines){
+    let size=Math.round(H*0.5);
+    for(;size>20;size-=4){
+      x.font='900 '+size+'px '+fam;
+      let mw=0;
+      for(const l of lines)mw=Math.max(mw,x.measureText(l).width);
+      if(mw<=W*0.8&&size*lh*lines.length<=H*0.72)break;
+    }
+    return size;
+  }
+  let lines;
+  if(SG.text.indexOf('\n')>=0){
+    lines=SG.text.split('\n').map(s=>s.trim()).filter(Boolean);
+  }else{
+    const words=SG.text.split(/\s+/).filter(Boolean);
+    let bestSize=-1;
+    for(let n=1;n<=3;n++){
+      if(n>words.length)break;
+      const target=SG.text.length/n;
+      const ls=[];let cur='';
+      for(const w of words){
+        if(cur&&(cur+' '+w).length>target&&ls.length<n-1){ls.push(cur);cur=w;}
+        else cur=cur?cur+' '+w:w;
+      }
+      ls.push(cur);
+      const s=fit(ls);
+      if(s>bestSize*1.12||bestSize<0){bestSize=s;lines=ls;}
+    }
+  }
+  const size=fit(lines);
+  x.font='900 '+size+'px '+fam;
+  x.textAlign='center';x.textBaseline='middle';
+  x.fillStyle='#fff';x.strokeStyle='#fff';x.lineJoin='round';
+  x.lineWidth=size*0.07;
+  const top=H/2-(lines.length-1)*size*lh/2;
+  lines.forEach((l,i)=>{
+    const y=top+i*size*lh;
+    x.strokeText(l,W/2,y);x.fillText(l,W/2,y);
+  });
+  return grayToZ(softCopy(c,Math.max(1,Math.round(H*0.004))));
+}
+
+/* hidden photo -> depth map of the main subject (closest big blob) */
+function photoZ(W,H,cut){
+  const P=SG.photo,pw=P.W,ph=P.H,d=P.depth,n=pw*ph;
+  const hist=new Float64Array(256);
+  for(let i=0;i<n;i++)hist[d[i]]++;
+  let sum=0;for(let t=0;t<256;t++)sum+=t*hist[t];
+  let sB=0,wB=0,bestV=-1,thr=128;
+  for(let t=0;t<256;t++){
+    wB+=hist[t];if(!wB)continue;
+    const wF=n-wB;if(!wF)break;
+    sB+=t*hist[t];
+    const mB=sB/wB,mF=(sum-sB)/wF;
+    const v=wB*wF*(mB-mF)*(mB-mF);
+    if(v>bestV){bestV=v;thr=t;}
+  }
+  thr=Math.max(1,Math.min(254,thr+cut));
+  const mask=new Uint8Array(n);
+  for(let i=0;i<n;i++)mask[i]=d[i]>thr?1:0;
+  /* biggest connected blob */
+  const lab=new Int32Array(n),stack=new Int32Array(n);
+  let cur=0,best=0,bestArea=0;
+  for(let i=0;i<n;i++){
+    if(!mask[i]||lab[i])continue;
+    cur++;
+    let sp=0,area=0;
+    stack[sp++]=i;lab[i]=cur;
+    while(sp){
+      const p=stack[--sp];area++;
+      const x=p%pw,y=(p/pw)|0;
+      if(x>0&&mask[p-1]&&!lab[p-1]){lab[p-1]=cur;stack[sp++]=p-1;}
+      if(x<pw-1&&mask[p+1]&&!lab[p+1]){lab[p+1]=cur;stack[sp++]=p+1;}
+      if(y>0&&mask[p-pw]&&!lab[p-pw]){lab[p-pw]=cur;stack[sp++]=p-pw;}
+      if(y<ph-1&&mask[p+pw]&&!lab[p+pw]){lab[p+pw]=cur;stack[sp++]=p+pw;}
+    }
+    if(area>bestArea){bestArea=area;best=cur;}
+  }
+  const z=new Float32Array(W*H);
+  if(!best){toast('No clear subject found, try the Subject cutoff slider');return z;}
+  let minX=pw,minY=ph,maxX=0,maxY=0,dmax=thr+1;
+  for(let y=0;y<ph;y++){
+    for(let x=0;x<pw;x++){
+      const i=y*pw+x;
+      if(lab[i]===best){
+        if(x<minX)minX=x;if(x>maxX)maxX=x;
+        if(y<minY)minY=y;if(y>maxY)maxY=y;
+        if(d[i]>dmax)dmax=d[i];
+      }
+    }
+  }
+  /* subject relief: nearer parts of the subject stick out more */
+  const gc=document.createElement('canvas');gc.width=pw;gc.height=ph;
+  const gx=gc.getContext('2d');
+  const gi=gx.createImageData(pw,ph),gd=gi.data;
+  const span=Math.max(1,dmax-thr);
+  for(let i=0;i<n;i++){
+    gd[i*4+3]=255;
+    if(lab[i]===best){
+      const nd=Math.max(0,Math.min(1,(d[i]-thr)/span));
+      const v=Math.round(255*(0.45+0.55*nd));
+      gd[i*4]=v;gd[i*4+1]=v;gd[i*4+2]=v;
+    }
+  }
+  gx.putImageData(gi,0,0);
+  const bw=maxX-minX+1,bh=maxY-minY+1;
+  const sc=Math.min(W*0.84/bw,H*0.84/bh);
+  const dw=bw*sc,dh=bh*sc;
+  const oc=document.createElement('canvas');oc.width=W;oc.height=H;
+  const ox=oc.getContext('2d');
+  ox.fillStyle='#000';ox.fillRect(0,0,W,H);
+  try{ox.filter='blur('+Math.max(1,Math.round(H*0.003))+'px)';}catch(e){}
+  ox.imageSmoothingQuality='high';
+  ox.drawImage(gc,minX,minY,bw,bh,(W-dw)/2,(H-dh)/2,dw,dh);
+  return grayToZ(oc);
+}
+
+function getZ(W,H){
+  const cut=+$('sgcut').value;
+  const key=[SG.mode,SG.mode==='text'?SG.text:SG.photoId+':'+cut,W,H,V.parallel].join('|');
+  if(SG.zc&&SG.zc.key===key)return SG.zc.z;
+  const z=SG.mode==='text'?textZ(W,H):photoZ(W,H,cut);
+  /* cross-eye viewing flips depth, so flip the map to keep the shape raised */
+  if(!V.parallel){for(let i=0;i<z.length;i++)z[i]=1-z[i];}
+  SG.zc={key:key,z:z};
+  return z;
+}
+
+function hsl2px(h,s,l){
+  const c=(1-Math.abs(2*l-1))*s,hp=h/60,x=c*(1-Math.abs(hp%2-1));
+  let r=0,g=0,b=0;
+  if(hp<1){r=c;g=x}else if(hp<2){r=x;g=c}else if(hp<3){g=c;b=x}
+  else if(hp<4){g=x;b=c}else if(hp<5){r=x;b=c}else{r=c;b=x}
+  const m=l-c/2;
+  return ((255<<24)|(Math.round((b+m)*255)<<16)|(Math.round((g+m)*255)<<8)|Math.round((r+m)*255))>>>0;
+}
+function getLut(i){
+  if(SG.luts[i])return SG.luts[i];
+  const p=PALS[i],N=512,a=new Uint32Array(N);
+  for(let k=0;k<N;k++){
+    a[k]=hsl2px((p.h0+p.sp*k/N)%360,0.92,0.28+Math.random()*0.47);
+  }
+  SG.luts[i]=a;
+  return a;
+}
+
+/* single-image stereogram (same-constraints algorithm with hidden surface removal) */
+function renderSG(){
+  const W=1600,H=900;
+  const mu=+$('sgdep').value/100;
+  const E=Math.round(W*(+$('sgper').value/100));
+  const z=getZ(W,H);
+  out.width=W;out.height=H;
+  const ctx=out.getContext('2d');
+  const img=ctx.createImageData(W,H);
+  const u32=new Uint32Array(img.data.buffer);
+  const lut=getLut(SG.pal),N=lut.length;
+  const same=new Int32Array(W),pix=new Uint32Array(W);
+  for(let y=0;y<H;y++){
+    const row=y*W;
+    for(let x=0;x<W;x++)same[x]=x;
+    for(let x=0;x<W;x++){
+      const zv=z[row+x];
+      const s=Math.round((1-mu*zv)*E/(2-mu*zv));
+      let left=x-(s>>1),right=left+s;
+      if(left>=0&&right<W){
+        let t=1,vis=true,zt;
+        do{
+          zt=zv+2*(2-mu*zv)*t/(mu*E);
+          const xl=x-t,xr=x+t;
+          if(xl<0||xr>=W)break;
+          vis=z[row+xl]<zt&&z[row+xr]<zt;
+          t++;
+        }while(vis&&zt<1);
+        if(vis){
+          let k=same[left];
+          while(k!==left&&k!==right){
+            if(k<right)left=k;
+            else{left=right;right=k;}
+            k=same[left];
+          }
+          same[left]=right;
         }
       }
-      box.appendChild(card);
-    });
-  } catch (e) {
-    msg(box, 'Something went wrong, try again');
+    }
+    for(let x=W-1;x>=0;x--){
+      if(same[x]===x){
+        const nz=0.5+0.25*Math.sin(x*0.013+y*0.021)+0.25*Math.sin(x*0.007-y*0.017+2);
+        let idx=((nz*0.6+Math.random()*0.4)*N)|0;
+        if(idx<0)idx=0;if(idx>=N)idx=N-1;
+        pix[x]=lut[idx];
+      }else{
+        pix[x]=pix[same[x]];
+      }
+      u32[row+x]=pix[x];
+    }
   }
+  ctx.putImageData(img,0,0);
+  /* two guide dots, spaced like the background pattern repeat */
+  const zb=V.parallel?0:1;
+  const s0=Math.round((1-mu*zb)*E/(2-mu*zb));
+  const m=dotMetrics(H);
+  dotAt(ctx,W/2-s0/2,m.y,m.r);
+  dotAt(ctx,W/2+s0/2,m.y,m.r);
 }
 
-/* ---------- LYRICS ---------- */
-function searchLyrics() {
-  const q = document.getElementById('lyricQ').value.trim();
-  if (!q) return;
-  const url = 'https://www.lyricsify.com/search?q=' + encodeURIComponent(q).replace(/%20/g, '+');
-  openInApp(url);
-}
-
-document.getElementById('songQ').addEventListener('keydown', e => { if (e.key === 'Enter') searchSongs(); });
-document.getElementById('coverQ').addEventListener('keydown', e => { if (e.key === 'Enter') searchCovers(); });
-document.getElementById('lyricQ').addEventListener('keydown', e => { if (e.key === 'Enter') searchLyrics(); });
+loadLib().then(startCam);
 </script>
-<script src="js/downloader.js"></script>
 </body>
 </html>
