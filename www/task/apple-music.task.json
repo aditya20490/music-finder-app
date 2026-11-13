@@ -1,9 +1,9 @@
 {
   "format": "task-automator",
   "version": 1,
-  "exported": 1794527494774,
+  "exported": 1794539132443,
   "project": {
-    "id": "504c593b-812e-46da-a359-994651571661",
+    "id": "8cdd4a32-c097-475d-adc9-e9edae1cb30d",
     "name": "Apple music downloader",
     "url": "https:\/\/aaplmusicdownloader.com\/",
     "created": 1794527460858,
@@ -13,10 +13,7 @@
         "selector": "#id_url",
         "tag": "input",
         "text": "Paste Apple Music link here: https:\/\/music.apple.c",
-        "xr": 0.6071428571428571,
-        "yr": 0.5924170616113744,
-        "sy": 0,
-        "wait": 200
+        "wait": 300
       },
       {
         "type": "type",
@@ -28,22 +25,16 @@
       },
       {
         "type": "click",
-        "selector": "#download_btn",
+        "selector": "#find-by-text-only",
         "tag": "a",
         "text": "Generate Download Link",
-        "xr": 0.7882653061224489,
-        "yr": 0.669826224328594,
-        "sy": 690.1818237304688,
-        "wait": 1500
+        "wait": 3000
       },
       {
         "type": "click",
         "selector": "#audioDropdownTrigger",
         "tag": "button",
         "text": "-- Select Audio Quality --",
-        "xr": 0.8214285714285714,
-        "yr": 0.5892575039494471,
-        "sy": 745.0908813476562,
         "wait": 300
       },
       {
@@ -51,9 +42,6 @@
         "selector": "#customAudioDropdown > div.custom-dropdown-menu > button.dropdown-option:nth-of-type(1)",
         "tag": "button",
         "text": "M4a (Original File) ORIGINAL",
-        "xr": 0.7487437185929648,
-        "yr": 0.16978193146417445,
-        "sy": 745.0908813476562,
         "wait": 50
       }
     ]
